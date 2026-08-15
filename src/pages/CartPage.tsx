@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
 import { Button } from '../components/Button'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 export function CartPage() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const {
     items,
     updateQuantity,
@@ -185,10 +187,16 @@ export function CartPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-border p-4 z-40">
+      <div className="fixed bottom-16 left-0 right-0 surface border-t border-default p-4 z-40">
         <div className="max-w-lg mx-auto">
-          <Button fullWidth size="lg" onClick={() => navigate('/checkout')}>
-            Checkout · ${total.toFixed(2)}
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => navigate(isAuthenticated ? '/checkout' : '/login', {
+              state: isAuthenticated ? undefined : { from: '/checkout' },
+            })}
+          >
+            {isAuthenticated ? `Checkout · $${total.toFixed(2)}` : 'Login to Checkout'}
           </Button>
         </div>
       </div>

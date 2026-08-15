@@ -1,22 +1,37 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { InputField, SocialLogin, AuthFooter } from '../components/FormFields'
 import { useAuth } from '../context/AuthContext'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const location = useLocation()
+  const { login, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const from = (location.state as { from?: string })?.from ?? '/'
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setSubmitting(true)
     const ok = await login(email, password)
-    if (ok) navigate('/')
+    setSubmitting(false)
+    if (ok) navigate(from, { replace: true })
     else setError('Invalid email or password')
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen surface-page flex items-center justify-center">
+        <LoadingSpinner label="Loading..." />
+      </div>
+    )
   }
 
   return (
@@ -30,6 +45,7 @@ export function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
         <InputField
           label="Password"
@@ -37,6 +53,7 @@ export function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
         />
 
         <div className="text-right">
@@ -49,8 +66,8 @@ export function LoginPage() {
           </button>
         </div>
 
-        <Button type="submit" fullWidth size="lg">
-          Login
+        <Button type="submit" fullWidth size="lg" disabled={submitting}>
+          {submitting ? 'Signing in...' : 'Login'}
         </Button>
         {error && <p className="text-sm text-primary text-center">{error}</p>}
       </form>

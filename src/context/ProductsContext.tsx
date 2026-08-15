@@ -16,6 +16,8 @@ interface ProductsContextType {
   error: string | null
   refresh: () => Promise<void>
   getProduct: (id: string) => Product | undefined
+  fetchProduct: (id: string) => Promise<Product | null>
+  searchProducts: (query: string) => Product[]
   getProductsByCategory: (gender?: string, subcategory?: string) => Product[]
   getNewProducts: () => Product[]
   getSaleProducts: () => Product[]
@@ -28,13 +30,19 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(fallbackProducts)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [productCache, setProductCache] = useState<Record<string, Product>>({})
 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const data = await api.getProducts()
-      if (data.length > 0) setProducts(data)
+      if (data.length > 0) {
+        setProducts(data)
+        const cache: Record<string, Product> = {}
+        data.forEach((p) => { cache[p.id] = p })
+        setProductCache((prev) => ({ ...prev, ...cache }))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load products')
       setProducts(fallbackProducts)
@@ -48,7 +56,37 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const getProduct = useCallback(
-    (id: string) => products.find((p) => p.id === id),
+    (id: string) => productCache[id] ?? products.find((p) => p.id === id),
+    [products, productCache]
+  )
+
+  const fetchProduct = useCallback(async (id: string): Promise<Product | null> => {
+    const cached = productCache[id] ?? products.find((p) => p.id === id)
+    if (cached) return cached
+
+    try {
+      const product = await api.getProduct(id)
+      setProductCache((prev) => ({ ...prev, [id]: product }))
+      setProducts((prev) => (prev.some((p) => p.id === id) ? prev : [...prev, product]))
+      return product
+    } catch {
+      return null
+    }
+  }, [productCache, products])
+
+  const searchProducts = useCallback(
+    (query: string) => {
+      const q = query.toLowerCase().trim()
+      if (!q) return []
+      return products.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.brand.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.subcategory?.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
+      )
+    },
     [products]
   )
 
@@ -94,6 +132,8 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         error,
         refresh,
         getProduct,
+        fetchProduct,
+        searchProducts,
         getProductsByCategory,
         getNewProducts,
         getSaleProducts,

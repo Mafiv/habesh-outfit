@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 
 const menuItems = [
   { icon: Package, label: 'My Orders', path: '/orders' },
@@ -22,7 +23,11 @@ const menuItems = [
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen label="Loading profile..." />
+  }
 
   if (!isAuthenticated) {
     return (
@@ -93,8 +98,8 @@ export function ProfilePage() {
 
         <button
           type="button"
-          onClick={() => {
-            logout()
+          onClick={async () => {
+            await logout()
             navigate('/')
           }}
           className="w-full flex items-center gap-4 px-4 py-4 mt-4 surface rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors border border-default"

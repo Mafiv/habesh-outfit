@@ -6,11 +6,14 @@ import { ProductCard } from '../components/ProductCard'
 import { ViewToggle, ProductListItem } from '../components/CatalogHelpers'
 import { categories } from '../data/products'
 import { useProducts } from '../context/ProductsContext'
+import { ProductGridSkeleton } from '../components/ui/ProductGridSkeleton'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Package } from 'lucide-react'
 
 export function CatalogPage() {
   const { gender, subcategory } = useParams()
   const navigate = useNavigate()
-  const { getProductsByCategory } = useProducts()
+  const { getProductsByCategory, loading } = useProducts()
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'low' | 'high'>('low')
 
@@ -26,15 +29,18 @@ export function CatalogPage() {
 
   return (
     <div className="pb-24">
-      <PageHeader title={title} showSearch />
+      <PageHeader
+        title={title}
+        showSearch
+        onSearchClick={() => navigate('/search')}
+      />
 
       <div className="max-w-lg mx-auto">
-        {/* Filter bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3 surface border-b border-default">
           <button
             type="button"
             onClick={() => navigate(`/catalog/${gender}/${subcategory ?? 'New'}/filters`)}
-            className="flex items-center gap-2 text-sm font-medium"
+            className="flex items-center gap-2 text-sm font-medium text-body"
           >
             <SlidersHorizontal size={18} />
             Filters
@@ -51,10 +57,17 @@ export function CatalogPage() {
           </div>
         </div>
 
-        {/* Products */}
         <div className="px-4 py-4">
-          {products.length === 0 ? (
-            <p className="text-center text-muted py-12">No products found</p>
+          {loading ? (
+            <ProductGridSkeleton count={6} />
+          ) : products.length === 0 ? (
+            <EmptyState
+              icon={Package}
+              title="No products found"
+              description="Try a different category or check back later."
+              actionLabel="Browse Shop"
+              onAction={() => navigate('/shop')}
+            />
           ) : view === 'grid' ? (
             <div className="grid grid-cols-2 gap-3">
               {products.map((product) => (

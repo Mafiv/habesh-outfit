@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { CartItem, Product } from '../types'
 
 interface CartContextType {
@@ -19,11 +19,35 @@ const CartContext = createContext<CartContextType | null>(null)
 const PROMO_CODES: Record<string, number> = {
   SAVE10: 0.1,
   STYLE20: 0.2,
+  WELCOME15: 0.15,
+}
+
+const CART_KEY = 'stylish_cart'
+const PROMO_KEY = 'stylish_promocode'
+
+function loadCart(): CartItem[] {
+  try {
+    const saved = localStorage.getItem(CART_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [promocode, setPromocode] = useState('')
+  const [items, setItems] = useState<CartItem[]>(loadCart)
+  const [promocode, setPromocodeState] = useState(
+    () => localStorage.getItem(PROMO_KEY) ?? ''
+  )
+
+  useEffect(() => {
+    localStorage.setItem(CART_KEY, JSON.stringify(items))
+  }, [items])
+
+  const setPromocode = useCallback((code: string) => {
+    setPromocodeState(code)
+    localStorage.setItem(PROMO_KEY, code)
+  }, [])
 
   const addItem = useCallback(
     (product: Product, size: string, color: string, quantity = 1) => {
@@ -78,7 +102,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [removeItem]
   )
 
-  const clearCart = useCallback(() => setItems([]), [])
+  const clearCart = useCallback(() => {
+    setItems([])
+    localStorage.removeItem(CART_KEY)
+  }, [])
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce(

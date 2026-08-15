@@ -18,6 +18,8 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   signup: (name: string, email: string, password: string) => Promise<boolean>
+  loginWithGoogle: () => Promise<void>
+  requestPasswordReset: (email: string) => Promise<boolean>
   logout: () => Promise<void>
 }
 
@@ -44,6 +46,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return !error
   }, [])
 
+  const loginWithGoogle = useCallback(async () => {
+    await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: window.location.origin,
+    })
+  }, [])
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    try {
+      const { error } = await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/login`,
+      })
+      return !error
+    } catch {
+      return false
+    }
+  }, [])
+
   const logout = useCallback(async () => {
     await authClient.signOut()
   }, [])
@@ -56,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: isPending,
         login,
         signup,
+        loginWithGoogle,
+        requestPasswordReset,
         logout,
       }}
     >

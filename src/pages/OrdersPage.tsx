@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Package, Truck, MapPin, CheckCircle2 } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
-import { useOrders } from '../context/UserDataContext'
+import { useOrders, useUserData } from '../context/UserDataContext'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import type { OrderStatus } from '../types'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -30,6 +31,16 @@ const statusOrder: OrderStatus[] = ['processing', 'shipped', 'in_transit', 'deli
 export function OrdersPage() {
   const navigate = useNavigate()
   const { orders } = useOrders()
+  const { loading } = useUserData()
+
+  if (loading) {
+    return (
+      <div className="pb-24 min-h-screen surface-page">
+        <PageHeader title="My Orders" />
+        <LoadingSpinner fullScreen label="Loading orders..." />
+      </div>
+    )
+  }
 
   return (
     <div className="pb-24 min-h-screen surface-page">
