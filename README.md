@@ -112,7 +112,29 @@ Open http://localhost:5173 (mobile viewport ~390px).
 - `GET /api/catalog/products/:id/reviews/` — Product reviews
 
 ### Admin
+- `GET /api/admin/orders/` — List all orders
 - `PATCH /api/admin/orders/:id/` — Update order status (header: `X-Admin-Key`)
+- `GET /api/admin/products/` — List products with stock
+- `PATCH /api/admin/products/:id/` — Update stock/price
+
+### Stripe payment methods
+- `GET /api/payments/config/` — Stripe publishable key + enabled flag
+- `POST /api/payments/setup-intent/` — Create SetupIntent for saving cards
+- `POST /api/payments/sync-payment-methods/` — Sync Stripe cards to profile
+
+### Admin UI
+
+Visit `/admin` in the app and enter your `ADMIN_API_KEY`.
+
+## Production Deploy
+
+See [DEPLOY.md](./DEPLOY.md) for Vercel + Railway/Render setup, Stripe webhooks, and MongoDB Atlas.
+
+## E2E Tests
+
+```bash
+npm run test:e2e
+```
 
 ### Auth (Better Auth service)
 - `POST /api/auth/sign-up/email` — Register
