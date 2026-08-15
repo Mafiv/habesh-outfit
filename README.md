@@ -37,10 +37,14 @@ Mobile-first e-commerce app with **React** frontend, **Django** API, **Better Au
 
 ## Quick Start
 
-### 1. Start MongoDB
+### 1. Start MongoDB (or full stack)
 
 ```bash
+# MongoDB only
 docker compose up -d mongodb
+
+# Full stack (MongoDB + Auth + Django API)
+docker compose up -d
 ```
 
 ### 2. Configure environment
@@ -88,18 +92,20 @@ Open http://localhost:5173 (mobile viewport ~390px).
 ## API Endpoints
 
 ### Public
-- `GET /api/health/` — Health check
+- `GET /api/health/` — Health check (includes MongoDB ping)
 - `GET /api/catalog/products/` — List products
 - `GET /api/catalog/products/:id/` — Product detail
 
 ### Authenticated (Bearer JWT from Better Auth)
+- `GET/PUT/POST/DELETE /api/cart/` — Server-side cart sync
 - `GET/POST /api/orders/` — Orders
 - `GET/POST /api/addresses/` — Shipping addresses
 - `GET/POST /api/payment-methods/` — Payment methods
 - `GET/POST /api/reviews/` — Reviews
 - `GET/POST /api/favorites/` — Favorites
 - `GET /api/payments/promocodes/` — Promocodes
-- `POST /api/payments/create-checkout-session/` — Stripe checkout
+- `POST /api/payments/validate-promocode/` — Validate a promo code
+- `POST /api/payments/create-checkout-session/` — Stripe checkout (creates pending order)
 
 ### Auth (Better Auth service)
 - `POST /api/auth/sign-up/email` — Register
