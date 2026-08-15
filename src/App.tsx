@@ -14,11 +14,16 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { OrdersPage, OrderTrackingPage } from './pages/OrdersPage'
+import { AddressesPage } from './pages/AddressesPage'
+import { PaymentMethodsPage } from './pages/PaymentMethodsPage'
+import { PromocodesPage } from './pages/PromocodesPage'
+import { ReviewsPage } from './pages/ReviewsPage'
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <main className="max-w-lg mx-auto min-h-screen bg-[#f5f5f5] relative">
+    <div className="min-h-screen surface-page">
+      <main className="max-w-lg mx-auto min-h-screen surface-page relative">
         {children}
       </main>
       <BottomNav />
@@ -35,78 +40,22 @@ export default function App() {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/success" element={<SuccessPage />} />
 
-      <Route
-        path="/"
-        element={
-          <AppLayout>
-            <HomePage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/shop"
-        element={
-          <AppLayout>
-            <ShopPage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/catalog/:gender"
-        element={
-          <AppLayout>
-            <CatalogPage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/catalog/:gender/:subcategory"
-        element={
-          <AppLayout>
-            <CatalogPage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/catalog/:gender/:subcategory/filters"
-        element={<FiltersPage />}
-      />
-      <Route
-        path="/product/:id"
-        element={<ProductDetailPage />}
-      />
-      <Route
-        path="/bag"
-        element={
-          <AppLayout>
-            <CartPage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/favorites"
-        element={
-          <AppLayout>
-            <FavoritesPage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <AppLayout>
-            <ProfilePage />
-          </AppLayout>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <AppLayout>
-            <SettingsPage />
-          </AppLayout>
-        }
-      />
+      <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
+      <Route path="/shop" element={<AppLayout><ShopPage /></AppLayout>} />
+      <Route path="/catalog/:gender" element={<AppLayout><CatalogPage /></AppLayout>} />
+      <Route path="/catalog/:gender/:subcategory" element={<AppLayout><CatalogPage /></AppLayout>} />
+      <Route path="/catalog/:gender/:subcategory/filters" element={<FiltersPage />} />
+      <Route path="/product/:id" element={<ProductDetailPage />} />
+      <Route path="/bag" element={<AppLayout><CartPage /></AppLayout>} />
+      <Route path="/favorites" element={<AppLayout><FavoritesPage /></AppLayout>} />
+      <Route path="/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
+      <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
+      <Route path="/orders" element={<AppLayout><OrdersPage /></AppLayout>} />
+      <Route path="/orders/:orderId" element={<AppLayout><OrderTrackingPage /></AppLayout>} />
+      <Route path="/addresses" element={<AppLayout><AddressesPage /></AppLayout>} />
+      <Route path="/payment-methods" element={<AppLayout><PaymentMethodsPage /></AppLayout>} />
+      <Route path="/promocodes" element={<AppLayout><PromocodesPage /></AppLayout>} />
+      <Route path="/reviews" element={<AppLayout><ReviewsPage /></AppLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

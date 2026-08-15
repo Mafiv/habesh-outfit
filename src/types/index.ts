@@ -45,3 +45,55 @@ export type Category = {
   gender: 'women' | 'men' | 'kids'
   subcategories: string[]
 }
+
+export type OrderStatus = 'processing' | 'shipped' | 'in_transit' | 'delivered'
+
+export interface OrderItem {
+  productId: string
+  title: string
+  brand: string
+  image: string
+  size: string
+  color: string
+  quantity: number
+  price: number
+}
+
+export interface Order {
+  id: string
+  date: string
+  status: OrderStatus
+  items: OrderItem[]
+  subtotal: number
+  discount: number
+  shipping: number
+  total: number
+  address: Address
+  trackingNumber: string
+}
+
+export interface PaymentMethod {
+  id: string
+  type: 'card' | 'paypal'
+  label: string
+  last4?: string
+  brand?: string
+  isDefault?: boolean
+}
+
+export interface Review {
+  id: string
+  productId: string
+  productTitle: string
+  productImage: string
+  rating: number
+  comment: string
+  date: string
+}
+
+export interface SavedPromocode {
+  code: string
+  discount: number
+  description: string
+  expiresAt: string
+}

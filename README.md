@@ -10,7 +10,12 @@ A mobile-first e-commerce web application inspired by the [Figma E-Commerce App 
 - **Product Detail** — Size/color selectors, favorites, related products
 - **Cart & Checkout** — Quantity controls, promocodes, multi-step checkout
 - **Auth** — Login, sign up, forgot password with social login UI
-- **Profile & Settings** — User menu, notification toggles
+- **Profile & Settings** — User menu, notification toggles, **dark mode**
+- **My Orders** — Order history with **order tracking** timeline
+- **Shipping Addresses** — Add, remove, set default
+- **Payment Methods** — Manage cards and PayPal
+- **Promocodes** — View and apply saved promo codes
+- **My Reviews** — Read and write product reviews
 - **Favorites** — Save products with persistent local storage
 
 ## Tech Stack

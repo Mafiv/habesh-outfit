@@ -56,7 +56,7 @@ export function CartPage() {
     <div className="pb-32">
       <div className="max-w-lg mx-auto">
         <div className="px-4 pt-4 pb-2">
-          <h1 className="text-2xl font-extrabold">My Bag</h1>
+          <h1 className="text-2xl font-extrabold text-body">My Bag</h1>
           <p className="text-xs text-muted mt-1">{items.length} items</p>
         </div>
 
@@ -64,7 +64,7 @@ export function CartPage() {
           {items.map((item) => (
             <div
               key={`${item.product.id}-${item.size}-${item.color}`}
-              className="flex gap-3 bg-white rounded-xl p-3 shadow-sm"
+              className="flex gap-3 surface rounded-xl p-3 shadow-sm border border-default"
             >
               <img
                 src={item.product.image}

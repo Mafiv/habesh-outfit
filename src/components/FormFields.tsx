@@ -13,7 +13,7 @@ export function InputField({ label, id, className = '', ...props }: InputFieldPr
       </label>
       <input
         id={inputId}
-        className={`w-full h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg text-sm outline-none focus:border-primary transition-colors ${className}`}
+        className={`w-full h-12 px-4 mt-1 surface-input rounded-lg text-sm outline-none focus:border-primary ${className}`}
         {...props}
       />
     </div>
@@ -28,9 +28,9 @@ export function SocialLogin({ mode }: SocialLoginProps) {
   return (
     <div className="space-y-4">
       <div className="relative flex items-center">
-        <div className="flex-1 border-t border-border" />
+        <div className="flex-1 border-t border-default" />
         <span className="px-4 text-xs text-muted">Or {mode} with social account</span>
-        <div className="flex-1 border-t border-border" />
+        <div className="flex-1 border-t border-default" />
       </div>
       <div className="flex justify-center gap-6">
         <button
@@ -42,7 +42,7 @@ export function SocialLogin({ mode }: SocialLoginProps) {
         </button>
         <button
           type="button"
-          className="w-14 h-14 rounded-full border border-border flex items-center justify-center"
+          className="w-14 h-14 rounded-full border border-default flex items-center justify-center surface"
           aria-label="Login with Google"
         >
           <svg width="24" height="24" viewBox="0 0 24 24">

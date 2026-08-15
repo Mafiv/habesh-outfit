@@ -40,7 +40,7 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div className="pb-28 bg-white min-h-screen">
+    <div className="pb-28 surface-page min-h-screen">
       <PageHeader
         title=""
         rightAction={
@@ -108,7 +108,7 @@ export function ProductDetailPage() {
             <button
               type="button"
               onClick={() => setShowSizePicker(!showSizePicker)}
-              className="w-full flex items-center justify-between h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg"
+              className="w-full flex items-center justify-between h-12 px-4 surface-input rounded-lg"
             >
               <span className="text-sm">
                 Size: <strong>{selectedSize || 'Select size'}</strong>
@@ -143,7 +143,7 @@ export function ProductDetailPage() {
             <button
               type="button"
               onClick={() => setShowColorPicker(!showColorPicker)}
-              className="w-full flex items-center justify-between h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg"
+              className="w-full flex items-center justify-between h-12 px-4 surface-input rounded-lg"
             >
               <span className="text-sm">
                 Color:{' '}
@@ -213,7 +213,7 @@ export function ProductDetailPage() {
       </div>
 
       {/* Sticky add to cart */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 z-40">
+      <div className="fixed bottom-0 left-0 right-0 surface border-t border-default p-4 z-40">
         <div className="max-w-lg mx-auto">
           <Button fullWidth size="lg" onClick={handleAddToCart}>
             Add to cart

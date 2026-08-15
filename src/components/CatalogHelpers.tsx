@@ -48,7 +48,7 @@ export function ProductListItem({ product, onClick }: ProductListItemProps) {
     <button
       type="button"
       onClick={onClick}
-      className="flex gap-3 bg-white rounded-lg p-3 shadow-sm w-full text-left"
+      className="flex gap-3 surface rounded-lg p-3 shadow-sm w-full text-left"
     >
       <div className="relative w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden">
         <img src={product.image} alt={product.title} className="w-full h-full object-cover" />

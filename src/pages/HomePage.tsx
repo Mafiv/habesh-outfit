@@ -13,7 +13,7 @@ export function HomePage() {
       <div className="max-w-lg mx-auto">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-2xl font-extrabold tracking-tight">Stylish</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-body">Stylish</h1>
           <button
             type="button"
             onClick={() => navigate('/shop')}
@@ -61,7 +61,7 @@ export function HomePage() {
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
                   i === 0
                     ? 'bg-primary text-white'
-                    : 'bg-white text-[#222] border border-border'
+                    : 'surface text-body border border-default'
                 }`}
               >
                 {chip}
@@ -73,7 +73,7 @@ export function HomePage() {
         {/* New section */}
         <section className="mt-6">
           <div className="flex items-center justify-between px-4 mb-3">
-            <h3 className="text-base font-bold uppercase tracking-wide">New</h3>
+            <h3 className="text-base font-bold uppercase tracking-wide text-body">New</h3>
             <button
               type="button"
               onClick={() => navigate('/catalog/women/New')}
@@ -97,7 +97,7 @@ export function HomePage() {
         {/* Sale section */}
         <section className="mt-6">
           <div className="flex items-center justify-between px-4 mb-3">
-            <h3 className="text-base font-bold uppercase tracking-wide">Sale</h3>
+            <h3 className="text-base font-bold uppercase tracking-wide text-body">Sale</h3>
             <button
               type="button"
               onClick={() => navigate('/catalog/women/Clothes')}

@@ -5,7 +5,7 @@ export function SuccessPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white">
+    <div className="min-h-screen surface-page flex flex-col items-center justify-center px-4">
       <div className="max-w-sm text-center">
         <div className="relative w-32 h-32 mx-auto mb-6">
           <div className="absolute inset-0 bg-primary/10 rounded-full" />
@@ -29,7 +29,7 @@ export function SuccessPage() {
           </div>
         </div>
 
-        <h1 className="text-3xl font-extrabold">Success!</h1>
+        <h1 className="text-3xl font-extrabold text-body">Success!</h1>
         <p className="text-sm text-muted mt-3 leading-relaxed">
           Your order will be delivered soon.
           <br />

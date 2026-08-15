@@ -3,25 +3,35 @@ import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { useCart } from '../context/CartContext'
-
-const addresses = [
-  { id: '1', name: 'Jane Doe', address: '123 Fashion St', city: 'New York, NY 10001', isDefault: true },
-  { id: '2', name: 'Jane Doe', address: '456 Style Ave', city: 'Brooklyn, NY 11201' },
-]
+import { useAddresses, useOrders, useUserData } from '../context/UserDataContext'
 
 type Step = 'address' | 'payment' | 'review'
 
 export function CheckoutPage() {
   const navigate = useNavigate()
   const { items, subtotal, discount, clearCart } = useCart()
+  const { addresses } = useAddresses()
+  const { paymentMethods } = useUserData()
+  const { createOrder } = useOrders()
+  const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0]
+  const defaultPayment = paymentMethods.find((m) => m.isDefault) ?? paymentMethods[0]
+
   const [step, setStep] = useState<Step>('address')
-  const [selectedAddress, setSelectedAddress] = useState('1')
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card')
+  const [selectedAddress, setSelectedAddress] = useState(defaultAddr?.id ?? '')
+  const [selectedPayment, setSelectedPayment] = useState(defaultPayment?.id ?? '')
 
   const shipping = subtotal > 50 ? 0 : 9.99
   const total = subtotal - discount + shipping
 
   const submitOrder = () => {
+    createOrder({
+      items: [...items],
+      subtotal,
+      discount,
+      shipping,
+      total,
+      addressId: selectedAddress,
+    })
     clearCart()
     navigate('/success')
   }
@@ -33,11 +43,10 @@ export function CheckoutPage() {
   ]
 
   return (
-    <div className="pb-24 min-h-screen bg-white">
+    <div className="pb-24 min-h-screen surface-page">
       <PageHeader title="Checkout" />
 
       <div className="max-w-lg mx-auto">
-        {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 px-4 py-4">
           {steps.map((s, i) => (
             <div key={s.key} className="flex items-center gap-2">
@@ -47,16 +56,16 @@ export function CheckoutPage() {
                     ? 'bg-primary text-white'
                     : steps.findIndex((x) => x.key === step) > i
                       ? 'bg-primary/20 text-primary'
-                      : 'bg-gray-100 text-muted'
+                      : 'bg-gray-100 dark:bg-dark-elevated text-muted'
                 }`}
               >
                 {i + 1}
               </div>
-              <span className={`text-xs ${step === s.key ? 'font-bold' : 'text-muted'}`}>
+              <span className={`text-xs ${step === s.key ? 'font-bold text-body' : 'text-muted'}`}>
                 {s.label}
               </span>
               {i < steps.length - 1 && (
-                <div className="w-8 h-px bg-border mx-1" />
+                <div className="w-8 h-px border-default bg-border dark:bg-border-dark mx-1" />
               )}
             </div>
           ))}
@@ -65,14 +74,14 @@ export function CheckoutPage() {
         <div className="px-4 py-4">
           {step === 'address' && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase mb-2">Shipping Address</h2>
+              <h2 className="text-sm font-bold uppercase mb-2 text-body">Shipping Address</h2>
               {addresses.map((addr) => (
                 <label
                   key={addr.id}
-                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
+                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors surface ${
                     selectedAddress === addr.id
                       ? 'border-primary bg-primary/5'
-                      : 'border-border'
+                      : 'border-default'
                   }`}
                 >
                   <input
@@ -84,9 +93,11 @@ export function CheckoutPage() {
                     className="mt-1 accent-primary"
                   />
                   <div>
-                    <p className="text-sm font-semibold">{addr.name}</p>
+                    <p className="text-sm font-semibold text-body">{addr.name}</p>
                     <p className="text-sm text-muted">{addr.address}</p>
-                    <p className="text-sm text-muted">{addr.city}</p>
+                    <p className="text-sm text-muted">
+                      {addr.city}, {addr.zip}
+                    </p>
                     {addr.isDefault && (
                       <span className="text-[10px] text-primary font-semibold uppercase">
                         Default
@@ -103,45 +114,37 @@ export function CheckoutPage() {
 
           {step === 'payment' && (
             <div className="space-y-4">
-              <h2 className="text-sm font-bold uppercase mb-2">Payment Method</h2>
+              <h2 className="text-sm font-bold uppercase mb-2 text-body">Payment Method</h2>
 
-              <label
-                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer ${
-                  paymentMethod === 'card' ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === 'card'}
-                  onChange={() => setPaymentMethod('card')}
-                  className="accent-primary"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Credit Card</p>
-                  <p className="text-xs text-muted mt-1">**** **** **** 4242</p>
-                </div>
-                <div className="flex gap-1">
-                  <div className="w-8 h-5 bg-blue-600 rounded text-white text-[8px] flex items-center justify-center font-bold">
-                    VISA
+              {paymentMethods.map((method) => (
+                <label
+                  key={method.id}
+                  className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer surface ${
+                    selectedPayment === method.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-default'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={selectedPayment === method.id}
+                    onChange={() => setSelectedPayment(method.id)}
+                    className="accent-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-body">{method.label}</p>
+                    {method.last4 && (
+                      <p className="text-xs text-muted mt-1">**** **** **** {method.last4}</p>
+                    )}
                   </div>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer ${
-                  paymentMethod === 'paypal' ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === 'paypal'}
-                  onChange={() => setPaymentMethod('paypal')}
-                  className="accent-primary"
-                />
-                <p className="text-sm font-semibold">PayPal</p>
-              </label>
+                  {method.brand && (
+                    <div className="w-8 h-5 bg-blue-600 rounded text-white text-[8px] flex items-center justify-center font-bold">
+                      {method.brand.toUpperCase().slice(0, 4)}
+                    </div>
+                  )}
+                </label>
+              ))}
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep('address')}>
@@ -156,7 +159,7 @@ export function CheckoutPage() {
 
           {step === 'review' && (
             <div className="space-y-4">
-              <h2 className="text-sm font-bold uppercase mb-2">Order Summary</h2>
+              <h2 className="text-sm font-bold uppercase mb-2 text-body">Order Summary</h2>
 
               {items.map((item) => (
                 <div
@@ -169,21 +172,21 @@ export function CheckoutPage() {
                     className="w-14 h-16 object-cover rounded-lg"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{item.product.title}</p>
+                    <p className="text-sm font-semibold truncate text-body">{item.product.title}</p>
                     <p className="text-xs text-muted">
                       {item.size} · Qty: {item.quantity}
                     </p>
                   </div>
-                  <span className="text-sm font-bold">
+                  <span className="text-sm font-bold text-body">
                     ${(item.product.price * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
 
-              <div className="border-t border-border pt-4 space-y-2">
+              <div className="border-t border-default pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span className="text-body">${subtotal.toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
@@ -193,9 +196,9 @@ export function CheckoutPage() {
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                  <span className="text-body">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
                 </div>
-                <div className="flex justify-between font-bold pt-2">
+                <div className="flex justify-between font-bold pt-2 text-body">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>

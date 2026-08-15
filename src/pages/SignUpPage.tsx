@@ -18,8 +18,8 @@ export function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white px-4 py-8 max-w-lg mx-auto">
-      <h1 className="text-4xl font-extrabold text-center mt-8">Sign up</h1>
+    <div className="min-h-screen surface-page px-4 py-8 max-w-lg mx-auto">
+      <h1 className="text-4xl font-extrabold text-center mt-8 text-body">Sign up</h1>
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-5">
         <InputField
