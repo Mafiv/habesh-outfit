@@ -25,8 +25,8 @@ import { ReviewsPage } from './pages/ReviewsPage'
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen surface-page">
-      <main className="max-w-lg mx-auto min-h-screen surface-page relative">
+    <div className="min-h-screen surface-page page-mesh">
+      <main className="max-w-lg mx-auto min-h-screen relative">
         {children}
       </main>
       <BottomNav />

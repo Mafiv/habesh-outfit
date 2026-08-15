@@ -44,38 +44,41 @@ export function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="pb-24 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[70vh] px-4">
-        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9b9b9b" strokeWidth="1.5">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 0 1-8 0" />
-          </svg>
+      <div className="pb-28 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[70vh] px-4 page-mesh">
+        <div className="card-modern p-8 text-center w-full max-w-sm">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-bold text-body">Your bag is empty</h2>
+          <p className="text-sm text-muted mt-2">
+            Discover styles you'll love and add them here
+          </p>
+          <Button className="mt-6" fullWidth onClick={() => navigate('/')}>
+            Start shopping
+          </Button>
         </div>
-        <h2 className="text-lg font-bold">Your bag is empty</h2>
-        <p className="text-sm text-muted mt-1 text-center">
-          Add items to get started with your shopping
-        </p>
-        <Button className="mt-6" onClick={() => navigate('/')}>
-          Start Shopping
-        </Button>
       </div>
     )
   }
 
   return (
-    <div className="pb-32">
+    <div className="pb-36 page-mesh">
       <div className="max-w-lg mx-auto">
-        <div className="px-4 pt-4 pb-2">
-          <h1 className="text-2xl font-extrabold text-body">My Bag</h1>
-          <p className="text-xs text-muted mt-1">{items.length} items</p>
+        <div className="px-4 pt-5 pb-3">
+          <p className="section-label">Checkout</p>
+          <h1 className="page-title">My bag</h1>
+          <p className="text-sm text-muted mt-1">{items.length} items</p>
         </div>
 
         <div className="px-4 space-y-3 mt-2">
           {items.map((item) => (
             <div
               key={`${item.product.id}-${item.size}-${item.color}`}
-              className="flex gap-3 surface rounded-xl p-3 shadow-sm border border-default"
+              className="flex gap-3 card-modern p-3"
             >
               <img
                 src={item.product.image}
@@ -159,7 +162,7 @@ export function CartPage() {
               placeholder="Enter promocode"
               value={promoInput}
               onChange={(e) => setPromoInput(e.target.value)}
-              className="flex-1 h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg text-sm outline-none focus:border-primary"
+              className="flex-1 h-12 px-4 surface-input rounded-xl text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
             />
             <Button variant="outline" size="sm" onClick={applyPromo} className="flex-shrink-0" disabled={promoLoading}>
               {promoLoading ? '...' : 'Apply'}
@@ -174,7 +177,7 @@ export function CartPage() {
         </div>
 
         {/* Summary */}
-        <div className="px-4 mt-6 space-y-2">
+        <div className="px-4 mt-6 space-y-2 card-modern p-4 mx-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted">Subtotal</span>
             <span>${subtotal.toFixed(2)}</span>
@@ -196,17 +199,19 @@ export function CartPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 surface border-t border-default p-4 z-40">
-        <div className="max-w-lg mx-auto">
-          <Button
-            fullWidth
-            size="lg"
-            onClick={() => navigate(isAuthenticated ? '/checkout' : '/login', {
-              state: isAuthenticated ? undefined : { from: '/checkout' },
-            })}
-          >
-            {isAuthenticated ? `Checkout · $${total.toFixed(2)}` : 'Login to Checkout'}
-          </Button>
+      <div className="fixed bottom-20 left-0 right-0 px-4 z-40 pointer-events-none">
+        <div className="max-w-lg mx-auto pointer-events-auto">
+          <div className="glass rounded-2xl shadow-float p-3">
+            <Button
+              fullWidth
+              size="lg"
+              onClick={() => navigate(isAuthenticated ? '/checkout' : '/login', {
+                state: isAuthenticated ? undefined : { from: '/checkout' },
+              })}
+            >
+              {isAuthenticated ? `Checkout · $${total.toFixed(2)}` : 'Sign in to checkout'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

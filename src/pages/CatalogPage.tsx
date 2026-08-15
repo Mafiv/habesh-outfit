@@ -87,7 +87,7 @@ export function CatalogPage() {
       />
 
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between px-4 py-3 surface border-b border-default">
+        <div className="flex items-center justify-between px-4 py-3 mx-4 mt-2 card-modern">
           <button
             type="button"
             onClick={() => navigate(`/catalog/${gender}/${subcategory ?? 'New'}/filters`)}

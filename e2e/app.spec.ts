@@ -17,12 +17,12 @@ test.describe('Home & Navigation', () => {
 test.describe('Auth pages', () => {
   test('login page renders form', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByRole('button', { name: 'Login', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible()
   })
 
   test('signup page renders form', async ({ page }) => {
     await page.goto('/signup')
-    await expect(page.getByRole('button', { name: /sign up|create/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create account', exact: true })).toBeVisible()
   })
 })
 

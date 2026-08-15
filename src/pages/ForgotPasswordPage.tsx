@@ -22,45 +22,47 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen surface-page">
-      <PageHeader title="Forgot Password" />
+    <div className="min-h-screen surface-page page-mesh">
+      <PageHeader title="Reset password" />
 
-      <div className="max-w-lg mx-auto px-4 py-8">
-        {sent ? (
-          <div className="text-center mt-12">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DB3022" strokeWidth="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
-              </svg>
+      <div className="max-w-lg mx-auto px-4 py-6">
+        <div className="card-modern p-6">
+          {sent ? (
+            <div className="text-center py-4">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-body">Check your email</h2>
+              <p className="text-sm text-muted mt-2">
+                If an account exists for {email}, you'll receive a reset link shortly.
+              </p>
             </div>
-            <h2 className="text-lg font-bold text-body">Check your email</h2>
-            <p className="text-sm text-muted mt-2">
-              If an account exists for {email}, you will receive a password reset link.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-muted mt-4 leading-relaxed">
-              Enter your email address and we will send you a link to reset your password.
-            </p>
+          ) : (
+            <>
+              <p className="text-sm text-muted leading-relaxed">
+                Enter your email and we'll send you a link to reset your password.
+              </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-              <InputField
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-              <Button type="submit" fullWidth size="lg" disabled={submitting}>
-                {submitting ? 'Sending...' : 'Send'}
-              </Button>
-              {error && <p className="text-sm text-primary text-center">{error}</p>}
-            </form>
-          </>
-        )}
+              <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                <InputField
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+                <Button type="submit" fullWidth size="lg" disabled={submitting}>
+                  {submitting ? 'Sending...' : 'Send reset link'}
+                </Button>
+                {error && <p className="text-sm text-primary text-center">{error}</p>}
+              </form>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
