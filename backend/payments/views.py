@@ -76,17 +76,28 @@ class CreateCheckoutSessionView(APIView):
             })
 
         try:
-            session = stripe.checkout.Session.create(
-                mode='payment',
-                line_items=line_items,
-                success_url=f'{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}',
-                cancel_url=f'{settings.FRONTEND_URL}/bag',
-                metadata={
+            from payments.stripe_service import get_or_create_stripe_customer
+
+            customer_id = get_or_create_stripe_customer(
+                user_id,
+                getattr(request.user, 'email', ''),
+                getattr(request.user, 'name', ''),
+            )
+            session_kwargs = {
+                'mode': 'payment',
+                'line_items': line_items,
+                'success_url': f'{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}',
+                'cancel_url': f'{settings.FRONTEND_URL}/bag',
+                'metadata': {
                     'user_id': user_id,
                     'order_id': str(order.id),
                     'promocode': promocode.upper(),
                 },
-            )
+            }
+            if customer_id:
+                session_kwargs['customer'] = customer_id
+
+            session = stripe.checkout.Session.create(**session_kwargs)
         except stripe.error.StripeError as exc:
             cancel_pending_order(order)
             return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)

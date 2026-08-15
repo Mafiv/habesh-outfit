@@ -20,6 +20,7 @@ import { OrdersPage, OrderTrackingPage } from './pages/OrdersPage'
 import { AddressesPage } from './pages/AddressesPage'
 import { PaymentMethodsPage } from './pages/PaymentMethodsPage'
 import { PromocodesPage } from './pages/PromocodesPage'
+import { AdminPage } from './pages/AdminPage'
 import { ReviewsPage } from './pages/ReviewsPage'
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/success" element={<SuccessPage />} />
+      <Route path="/admin" element={<AdminPage />} />
 
       <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
       <Route path="/search" element={<AppLayout><SearchPage /></AppLayout>} />

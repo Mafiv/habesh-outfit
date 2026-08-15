@@ -153,6 +153,23 @@ export const api = {
     ),
 
   // Stripe
+  getStripeConfig: () =>
+    request<{ stripeEnabled: boolean; publishableKey: string }>('/payments/config/'),
+
+  createSetupIntent: () =>
+    request<{ clientSecret: string; customerId: string }>(
+      '/payments/setup-intent/',
+      { method: 'POST' },
+      true
+    ),
+
+  syncStripePaymentMethods: () =>
+    request<PaymentMethod[]>(
+      '/payments/sync-payment-methods/',
+      { method: 'POST' },
+      true
+    ),
+
   createCheckoutSession: (data: object) =>
     request<{ sessionId: string; url: string }>(
       '/payments/create-checkout-session/',

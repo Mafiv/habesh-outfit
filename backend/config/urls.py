@@ -4,7 +4,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 import mongoengine
 
-from orders.admin_views import AdminOrderStatusView
+from orders.admin_views import (
+    AdminOrderListView,
+    AdminOrderStatusView,
+    AdminProductListView,
+    AdminProductUpdateView,
+)
 
 
 @api_view(['GET'])
@@ -29,10 +34,17 @@ def health(request):
     )
 
 
-urlpatterns = [
+api_urlpatterns = [
     path('health/', health),
     path('catalog/', include('catalog.urls')),
     path('', include('orders.urls')),
     path('payments/', include('payments.urls')),
+    path('admin/orders/', AdminOrderListView.as_view()),
     path('admin/orders/<str:pk>/', AdminOrderStatusView.as_view()),
+    path('admin/products/', AdminProductListView.as_view()),
+    path('admin/products/<str:pk>/', AdminProductUpdateView.as_view()),
+]
+
+urlpatterns = [
+    path('api/', include(api_urlpatterns)),
 ]
