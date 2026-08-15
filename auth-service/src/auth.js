@@ -7,6 +7,17 @@ const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/stylish'
 const client = new MongoClient(mongoUri)
 const db = client.db()
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+
+const socialProviders = {}
+if (googleClientId && googleClientSecret) {
+  socialProviders.google = {
+    clientId: googleClientId,
+    clientSecret: googleClientSecret,
+  }
+}
+
 export const auth = betterAuth({
   database: mongodbAdapter(db, {
     client,
@@ -23,6 +34,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 6,
   },
+  socialProviders,
   plugins: [
     jwt({
       jwt: {

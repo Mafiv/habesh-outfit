@@ -13,6 +13,7 @@ PRODUCTS = [
         ],
         'category': 'Clothes', 'gender': 'women', 'is_new': True,
         'colors': ['#222', '#DB3022', '#fff'], 'sizes': ['XS', 'S', 'M', 'L', 'XL'],
+        'stock': 42,
         'description': 'A timeless Spanish-inspired tee crafted from soft organic cotton.',
     },
     {
@@ -22,6 +23,7 @@ PRODUCTS = [
         'images': ['https://images.unsplash.com/photo-1434389677669-e94b3604b210?w=400&h=500&fit=crop&auto=format&q=80'],
         'category': 'Clothes', 'gender': 'women', 'is_sale': True,
         'colors': ['#222', '#fff', '#9b9b9b'], 'sizes': ['XS', 'S', 'M', 'L'],
+        'stock': 28,
         'description': 'Essential basic tee with a slim fit.',
     },
     {
@@ -31,6 +33,7 @@ PRODUCTS = [
         'images': ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=500&fit=crop&auto=format&q=80'],
         'category': 'Shoes', 'gender': 'men', 'is_new': True,
         'colors': ['#222', '#fff', '#DB3022'], 'sizes': ['7', '8', '9', '10', '11', '12'],
+        'stock': 15,
         'description': 'Galaxy-inspired running shoes with responsive cushioning.',
     },
     {
@@ -40,6 +43,7 @@ PRODUCTS = [
         'images': ['https://images.unsplash.com/photo-1460353589841-044d77ddcc0e?w=400&h=500&fit=crop&auto=format&q=80'],
         'category': 'Shoes', 'gender': 'men', 'is_sale': True,
         'colors': ['#222', '#fff'], 'sizes': ['7', '8', '9', '10', '11'],
+        'stock': 8,
         'description': 'Iconic Air Max silhouette with visible Air cushioning.',
     },
     {
@@ -49,6 +53,7 @@ PRODUCTS = [
         'images': ['https://images.unsplash.com/photo-1551028719-0d9b941943c5?w=400&h=500&fit=crop&auto=format&q=80'],
         'category': 'Clothes', 'gender': 'women', 'is_new': True,
         'colors': ['#222', '#8B4513'], 'sizes': ['XS', 'S', 'M', 'L'],
+        'stock': 5,
         'description': 'Classic biker-style leather jacket.',
     },
     {
@@ -58,6 +63,7 @@ PRODUCTS = [
         'images': ['https://images.unsplash.com/photo-1591047139-782c14d4b9a6?w=400&h=500&fit=crop&auto=format&q=80'],
         'category': 'Clothes', 'gender': 'women', 'is_sale': True,
         'colors': ['#fff', '#DB3022', '#FFD700'], 'sizes': ['XS', 'S', 'M', 'L', 'XL'],
+        'stock': 35,
         'description': 'Flowy midi dress perfect for warm days.',
     },
 ]

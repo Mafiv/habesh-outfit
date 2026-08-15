@@ -9,7 +9,10 @@ from mongoengine import (
 
 
 class Product(Document):
-    meta = {'collection': 'products', 'indexes': ['gender', 'category', 'is_new', 'is_sale']}
+    meta = {
+        'collection': 'products',
+        'indexes': ['gender', 'category', 'is_new', 'is_sale', 'title', 'brand'],
+    }
 
     title = StringField(required=True, max_length=200)
     brand = StringField(required=True, max_length=100)
@@ -17,6 +20,7 @@ class Product(Document):
     original_price = FloatField()
     rating = FloatField(default=0)
     review_count = IntField(default=0)
+    stock = IntField(default=50)
     image = StringField(required=True)
     images = ListField(StringField(), default=list)
     category = StringField(required=True)
@@ -37,6 +41,8 @@ class Product(Document):
             'originalPrice': self.original_price,
             'rating': self.rating,
             'reviewCount': self.review_count,
+            'stock': self.stock,
+            'inStock': self.stock > 0,
             'image': self.image,
             'images': self.images,
             'category': self.category,

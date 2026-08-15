@@ -37,7 +37,11 @@ class CreateCheckoutSessionView(APIView):
         address_id = data.get('addressId')
         user_id = str(request.user.id)
 
-        order = create_pending_order(user_id, items, promocode, address_id)
+        try:
+            order = create_pending_order(user_id, items, promocode, address_id)
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
         totals = calculate_totals(items, promocode)
         discount_rate = totals['discountRate']
 
@@ -118,10 +122,15 @@ class StripeWebhookView(APIView):
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             order_id = session.get('metadata', {}).get('order_id')
+            customer_email = (
+                session.get('customer_details', {}).get('email')
+                or session.get('customer_email')
+                or ''
+            )
             if order_id and ObjectId.is_valid(order_id):
                 try:
                     order = Order.objects.get(id=ObjectId(order_id))
-                    complete_order_payment(order, session)
+                    complete_order_payment(order, session, customer_email)
                 except Order.DoesNotExist:
                     pass
 
@@ -152,6 +161,9 @@ class PromocodesView(APIView):
 
 
 class ValidatePromocodeView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         code = request.data.get('code', '')
         result = validate_promocode(code)

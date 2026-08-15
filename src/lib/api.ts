@@ -1,5 +1,16 @@
 import { getAuthToken } from './auth-client'
-import type { Product, Address, Order, PaymentMethod, Review, SavedPromocode, CartResponse, CartItemPayload } from '../types'
+import type {
+  Product,
+  Address,
+  Order,
+  PaymentMethod,
+  Review,
+  SavedPromocode,
+  CartResponse,
+  CartItemPayload,
+  PaginatedProducts,
+  ProductReviewsResponse,
+} from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -33,16 +44,34 @@ export const api = {
   health: () => request<{ status: string }>('/health/'),
 
   // Catalog (public)
-  getProducts: (params?: { gender?: string; subcategory?: string; sort?: string }) => {
+  getProducts: (params?: {
+    gender?: string
+    subcategory?: string
+    sort?: string
+    q?: string
+    page?: number
+    pageSize?: number
+    inStock?: boolean
+  }) => {
     const qs = new URLSearchParams()
     if (params?.gender) qs.set('gender', params.gender)
     if (params?.subcategory) qs.set('subcategory', params.subcategory)
     if (params?.sort) qs.set('sort', params.sort)
+    if (params?.q) qs.set('q', params.q)
+    if (params?.page) qs.set('page', String(params.page))
+    if (params?.pageSize) qs.set('pageSize', String(params.pageSize))
+    if (params?.inStock) qs.set('inStock', 'true')
     const query = qs.toString()
-    return request<Product[]>(`/catalog/products/${query ? `?${query}` : ''}`)
+    return request<PaginatedProducts>(`/catalog/products/${query ? `?${query}` : ''}`)
   },
 
+  searchProducts: (q: string, page = 1, pageSize = 20) =>
+    api.getProducts({ q, page, pageSize }),
+
   getProduct: (id: string) => request<Product>(`/catalog/products/${id}/`),
+
+  getProductReviews: (id: string) =>
+    request<ProductReviewsResponse>(`/catalog/products/${id}/reviews/`),
 
   getRelatedProducts: (id: string) =>
     request<Product[]>(`/catalog/products/${id}/related/`),
@@ -120,8 +149,7 @@ export const api = {
   validatePromocode: (code: string) =>
     request<{ valid: boolean; code: string; discount: number; description?: string }>(
       '/payments/validate-promocode/',
-      { method: 'POST', body: JSON.stringify({ code }) },
-      true
+      { method: 'POST', body: JSON.stringify({ code }) }
     ),
 
   // Stripe

@@ -104,8 +104,15 @@ Open http://localhost:5173 (mobile viewport ~390px).
 - `GET/POST /api/reviews/` — Reviews
 - `GET/POST /api/favorites/` — Favorites
 - `GET /api/payments/promocodes/` — Promocodes
-- `POST /api/payments/validate-promocode/` — Validate a promo code
+- `POST /api/payments/validate-promocode/` — Validate a promo code (public)
 - `POST /api/payments/create-checkout-session/` — Stripe checkout (creates pending order)
+
+### Public catalog extras
+- `GET /api/catalog/products/?q=search&page=1&pageSize=20` — Search + pagination
+- `GET /api/catalog/products/:id/reviews/` — Product reviews
+
+### Admin
+- `PATCH /api/admin/orders/:id/` — Update order status (header: `X-Admin-Key`)
 
 ### Auth (Better Auth service)
 - `POST /api/auth/sign-up/email` — Register

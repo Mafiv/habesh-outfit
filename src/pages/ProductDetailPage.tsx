@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, MessageSquare } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { StarRating } from '../components/StarRating'
@@ -11,6 +11,8 @@ import { useProducts } from '../context/ProductsContext'
 import { useCart } from '../context/CartContext'
 import { useFavorites } from '../context/FavoritesContext'
 import { useToast } from '../context/ToastContext'
+import { api } from '../lib/api'
+import type { ProductReviewsResponse } from '../types'
 import { Package } from 'lucide-react'
 
 export function ProductDetailPage() {
@@ -28,6 +30,12 @@ export function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [showSizePicker, setShowSizePicker] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [reviewsData, setReviewsData] = useState<ProductReviewsResponse | null>(null)
+
+  useEffect(() => {
+    if (!id) return
+    api.getProductReviews(id).then(setReviewsData).catch(() => setReviewsData(null))
+  }, [id])
 
   useEffect(() => {
     if (!id) return
@@ -68,9 +76,16 @@ export function ProductDetailPage() {
   const handleAddToCart = () => {
     const size = selectedSize || product.sizes[0]
     const color = selectedColor || product.colors[0]
-    addItem(product, size, color)
-    showToast(`${product.title} added to bag`)
+    const ok = addItem(product, size, color)
+    if (ok) {
+      showToast(`${product.title} added to bag`)
+    } else {
+      showToast('Not enough stock available', 'error')
+    }
   }
+
+  const inStock = product.inStock !== false && (product.stock ?? 1) > 0
+  const lowStock = inStock && (product.stock ?? 99) <= 10
 
   return (
     <div className="pb-28 surface-page min-h-screen">
@@ -134,6 +149,14 @@ export function ProductDetailPage() {
               </span>
             )}
           </div>
+
+          {!inStock ? (
+            <p className="text-sm font-semibold text-primary">Out of stock</p>
+          ) : lowStock ? (
+            <p className="text-sm font-medium text-orange-600">
+              Only {product.stock} left in stock
+            </p>
+          ) : null}
 
           <div>
             <button
@@ -214,6 +237,26 @@ export function ProductDetailPage() {
             </p>
           </div>
 
+          {reviewsData && reviewsData.reviews.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold uppercase mb-3 text-body flex items-center gap-2">
+                <MessageSquare size={16} />
+                Reviews ({reviewsData.reviewCount})
+              </h3>
+              <div className="space-y-3">
+                {reviewsData.reviews.slice(0, 5).map((review) => (
+                  <div key={review.id} className="surface rounded-xl p-3 border border-default">
+                    <div className="flex items-center justify-between mb-1">
+                      <StarRating rating={review.rating} size={12} />
+                      <span className="text-[10px] text-muted">{review.date}</span>
+                    </div>
+                    <p className="text-sm text-body leading-relaxed">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {related.length > 0 && (
             <section className="pt-2">
               <h3 className="text-sm font-bold uppercase mb-3 text-body">You can also like this</h3>
@@ -237,8 +280,8 @@ export function ProductDetailPage() {
           <Button variant="outline" className="flex-shrink-0" onClick={() => navigate('/bag')}>
             View Bag
           </Button>
-          <Button fullWidth size="lg" onClick={handleAddToCart}>
-            Add to cart
+          <Button fullWidth size="lg" onClick={handleAddToCart} disabled={!inStock}>
+            {inStock ? 'Add to cart' : 'Out of stock'}
           </Button>
         </div>
       </div>

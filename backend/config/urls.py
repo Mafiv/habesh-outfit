@@ -4,6 +4,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 import mongoengine
 
+from orders.admin_views import AdminOrderStatusView
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -32,4 +34,5 @@ urlpatterns = [
     path('catalog/', include('catalog.urls')),
     path('', include('orders.urls')),
     path('payments/', include('payments.urls')),
+    path('admin/orders/<str:pk>/', AdminOrderStatusView.as_view()),
 ]

@@ -1,4 +1,4 @@
-"""Shared order, cart, and promo logic."""
+"""Shared order, cart, promo, and inventory logic."""
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -29,7 +29,6 @@ def get_promo_rate(code: str) -> float:
 
 
 def calculate_totals(items: list[dict], promocode: str = '') -> dict:
-    """Compute subtotal, discount, shipping, and total from cart/order items."""
     subtotal = sum(i['price'] * i.get('quantity', 1) for i in items)
     discount_rate = get_promo_rate(promocode)
     discount = round(subtotal * discount_rate, 2)
@@ -54,6 +53,52 @@ def validate_promocode(code: str) -> dict:
         'discount': rate,
         'description': f'{int(rate * 100)}% off your order',
     }
+
+
+def validate_stock(items: list[dict]) -> list[str]:
+    """Return human-readable errors when requested quantity exceeds stock."""
+    errors = []
+    requested: dict[str, int] = {}
+
+    for item in items:
+        product_id = item.get('productId') or item.get('product_id')
+        qty = item.get('quantity', 1)
+        if not product_id:
+            continue
+        requested[product_id] = requested.get(product_id, 0) + qty
+
+    for product_id, qty in requested.items():
+        try:
+            product = Product.objects.get(id=ObjectId(product_id))
+        except (Product.DoesNotExist, InvalidId):
+            errors.append(f'Product {product_id} is no longer available.')
+            continue
+        if product.stock <= 0:
+            errors.append(f'{product.title} is out of stock.')
+        elif qty > product.stock:
+            errors.append(
+                f'{product.title}: only {product.stock} left in stock.'
+            )
+
+    return errors
+
+
+def decrement_stock(items) -> None:
+    """Reduce product stock after a successful order."""
+    totals: dict[str, int] = {}
+    for item in items:
+        pid = getattr(item, 'product_id', None) or item.get('productId')
+        qty = getattr(item, 'quantity', None) or item.get('quantity', 1)
+        if pid:
+            totals[str(pid)] = totals.get(str(pid), 0) + qty
+
+    for product_id, qty in totals.items():
+        try:
+            product = Product.objects.get(id=ObjectId(product_id))
+            product.stock = max(0, product.stock - qty)
+            product.save()
+        except (Product.DoesNotExist, InvalidId):
+            pass
 
 
 def resolve_address(user_id: str, address_id: str | None) -> Address | None:
@@ -105,6 +150,10 @@ def create_pending_order(
     promocode: str = '',
     address_id: str | None = None,
 ) -> Order:
+    stock_errors = validate_stock(items)
+    if stock_errors:
+        raise ValueError(stock_errors[0])
+
     totals = calculate_totals(items, promocode)
     order = Order(
         user_id=user_id,
@@ -121,12 +170,18 @@ def create_pending_order(
     return order
 
 
-def complete_order_payment(order: Order, session: dict) -> Order:
+def complete_order_payment(order: Order, session: dict, customer_email: str = '') -> Order:
     order.stripe_session_id = session.get('id', '')
     order.stripe_payment_intent = session.get('payment_intent', '') or ''
     order.status = 'processing'
     order.save()
+    decrement_stock(order.items)
     clear_user_cart(order.user_id)
+
+    if customer_email:
+        from core.email import send_order_confirmation
+        send_order_confirmation(order, customer_email)
+
     return order
 
 

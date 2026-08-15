@@ -5,9 +5,9 @@ import { useAuth } from './AuthContext'
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (product: Product, size: string, color: string, quantity?: number) => void
+  addItem: (product: Product, size: string, color: string, quantity?: number) => boolean
   removeItem: (productId: string, size: string, color: string) => void
-  updateQuantity: (productId: string, size: string, color: string, quantity: number) => void
+  updateQuantity: (productId: string, size: string, color: string, quantity: number) => boolean
   clearCart: () => void
   itemCount: number
   subtotal: number
@@ -48,6 +48,12 @@ function toPayload(items: CartItem[]): CartItemPayload[] {
     quantity: i.quantity,
     price: i.product.price,
   }))
+}
+
+function cartQtyForProduct(items: CartItem[], productId: string): number {
+  return items
+    .filter((i) => i.product.id === productId)
+    .reduce((sum, i) => sum + i.quantity, 0)
 }
 
 function payloadToCartItem(item: CartItemPayload): CartItem {
@@ -159,11 +165,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (product: Product, size: string, color: string, quantity = 1) => {
+      const stock = product.stock ?? 99
+      if (product.inStock === false || stock <= 0) return false
+
+      let added = false
       setItems((prev) => {
+        const currentQty = cartQtyForProduct(prev, product.id)
+        if (currentQty + quantity > stock) return prev
+
         const existing = prev.find(
           (i) =>
             i.product.id === product.id && i.size === size && i.color === color
         )
+        added = true
         if (existing) {
           return prev.map((i) =>
             i.product.id === product.id && i.size === size && i.color === color
@@ -173,6 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { product, size, color, quantity }]
       })
+      return added
     },
     []
   )
@@ -197,15 +212,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (productId: string, size: string, color: string, quantity: number) => {
       if (quantity <= 0) {
         removeItem(productId, size, color)
-        return
+        return true
       }
-      setItems((prev) =>
-        prev.map((i) =>
+
+      let updated = false
+      setItems((prev) => {
+        const item = prev.find(
+          (i) =>
+            i.product.id === productId && i.size === size && i.color === color
+        )
+        if (!item) return prev
+
+        const stock = item.product.stock ?? 99
+        const otherQty = cartQtyForProduct(prev, productId) - item.quantity
+        if (otherQty + quantity > stock) return prev
+
+        updated = true
+        return prev.map((i) =>
           i.product.id === productId && i.size === size && i.color === color
             ? { ...i, quantity }
             : i
         )
-      )
+      })
+      return updated
     },
     [removeItem]
   )

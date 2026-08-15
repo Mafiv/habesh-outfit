@@ -17,7 +17,7 @@ interface ProductsContextType {
   refresh: () => Promise<void>
   getProduct: (id: string) => Product | undefined
   fetchProduct: (id: string) => Promise<Product | null>
-  searchProducts: (query: string) => Product[]
+  searchProducts: (query: string, page?: number) => Promise<Product[]>
   getProductsByCategory: (gender?: string, subcategory?: string) => Product[]
   getNewProducts: () => Product[]
   getSaleProducts: () => Product[]
@@ -36,11 +36,11 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const data = await api.getProducts()
-      if (data.length > 0) {
-        setProducts(data)
+      const data = await api.getProducts({ pageSize: 100 })
+      if (data.results.length > 0) {
+        setProducts(data.results)
         const cache: Record<string, Product> = {}
-        data.forEach((p) => { cache[p.id] = p })
+        data.results.forEach((p) => { cache[p.id] = p })
         setProductCache((prev) => ({ ...prev, ...cache }))
       }
     } catch (err) {
@@ -74,21 +74,23 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     }
   }, [productCache, products])
 
-  const searchProducts = useCallback(
-    (query: string) => {
-      const q = query.toLowerCase().trim()
-      if (!q) return []
+  const searchProducts = useCallback(async (query: string, page = 1) => {
+    const q = query.trim()
+    if (!q) return []
+    try {
+      const data = await api.searchProducts(q, page)
+      return data.results
+    } catch {
+      const lower = q.toLowerCase()
       return products.filter(
         (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.subcategory?.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q)
+          p.title.toLowerCase().includes(lower) ||
+          p.brand.toLowerCase().includes(lower) ||
+          p.category.toLowerCase().includes(lower) ||
+          p.description.toLowerCase().includes(lower)
       )
-    },
-    [products]
-  )
+    }
+  }, [products])
 
   const getProductsByCategory = useCallback(
     (gender?: string, subcategory?: string) => {

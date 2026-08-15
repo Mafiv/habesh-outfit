@@ -5,6 +5,7 @@ from orders.services import (
     validate_promocode,
     get_promo_rate,
     merge_cart_items,
+    validate_stock,
 )
 from orders.models import CartItem
 
@@ -68,3 +69,8 @@ class CartMergeTests(SimpleTestCase):
         merged = merge_cart_items(existing, incoming)
         self.assertEqual(len(merged), 1)
         self.assertEqual(merged[0].quantity, 3)
+
+
+class ValidateStockTests(SimpleTestCase):
+    def test_empty_items_no_errors(self):
+        self.assertEqual(validate_stock([]), [])

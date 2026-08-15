@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, X, Clock } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
@@ -6,6 +6,7 @@ import { ProductListItem } from '../components/CatalogHelpers'
 import { useProducts } from '../context/ProductsContext'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { EmptyState } from '../components/ui/EmptyState'
+import type { Product } from '../types'
 
 const RECENT_KEY = 'stylish_recent_searches'
 
@@ -30,18 +31,38 @@ export function SearchPage() {
   const initialQuery = searchParams.get('q') ?? ''
   const [query, setQuery] = useState(initialQuery)
   const [recent, setRecent] = useState<string[]>(getRecentSearches())
-  const { products, loading, searchProducts } = useProducts()
+  const [results, setResults] = useState<Product[]>([])
+  const [searching, setSearching] = useState(false)
+  const { searchProducts } = useProducts()
 
   useEffect(() => {
     setQuery(initialQuery)
   }, [initialQuery])
 
-  const results = useMemo(() => {
-    if (!query.trim()) return []
-    return searchProducts(query)
-  }, [query, searchProducts, products])
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([])
+      return
+    }
 
-  const handleSearch = (value: string) => {
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const data = await searchProducts(query)
+        if (!cancelled) setResults(data)
+      } finally {
+        if (!cancelled) setSearching(false)
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, searchProducts])
+
+  const handleSearch = useCallback((value: string) => {
     setQuery(value)
     if (value.trim()) {
       setSearchParams({ q: value.trim() })
@@ -50,7 +71,7 @@ export function SearchPage() {
     } else {
       setSearchParams({})
     }
-  }
+  }, [setSearchParams])
 
   const clearRecent = () => {
     localStorage.removeItem(RECENT_KEY)
@@ -61,22 +82,22 @@ export function SearchPage() {
     <div className="pb-24 min-h-screen surface-page">
       <PageHeader title="Search" />
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-lg mx-auto px-4 pt-2">
         <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             type="search"
-            placeholder="Search products, brands..."
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search products, brands..."
+            className="w-full h-12 pl-10 pr-10 surface-input rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/30"
             autoFocus
-            className="w-full h-12 pl-11 pr-10 surface-input rounded-full text-sm outline-none focus:border-primary"
           />
           {query && (
             <button
               type="button"
               onClick={() => handleSearch('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
               aria-label="Clear search"
             >
               <X size={18} />
@@ -87,15 +108,10 @@ export function SearchPage() {
         {!query.trim() && recent.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold uppercase text-body flex items-center gap-2">
-                <Clock size={14} />
-                Recent
-              </h3>
-              <button
-                type="button"
-                onClick={clearRecent}
-                className="text-xs text-muted"
-              >
+              <h2 className="text-xs font-bold uppercase text-muted flex items-center gap-1.5">
+                <Clock size={14} /> Recent
+              </h2>
+              <button type="button" onClick={clearRecent} className="text-xs text-primary">
                 Clear
               </button>
             </div>
@@ -105,7 +121,7 @@ export function SearchPage() {
                   key={term}
                   type="button"
                   onClick={() => handleSearch(term)}
-                  className="px-4 py-2 rounded-full text-sm surface border border-default text-body"
+                  className="px-3 py-1.5 rounded-full text-xs surface border border-default"
                 >
                   {term}
                 </button>
@@ -114,43 +130,30 @@ export function SearchPage() {
           </div>
         )}
 
-        {query.trim() && loading && (
+        {query.trim() && searching && (
           <div className="mt-12 flex justify-center">
             <LoadingSpinner label="Searching..." />
           </div>
         )}
 
-        {query.trim() && !loading && results.length === 0 && (
+        {query.trim() && !searching && results.length === 0 && (
           <EmptyState
             icon={Search}
-            title="No results found"
-            description={`We couldn't find anything for "${query}". Try a different search term.`}
-            actionLabel="Browse Shop"
-            onAction={() => navigate('/shop')}
+            title="No results"
+            description={`Nothing found for "${query}". Try another search term.`}
           />
         )}
 
-        {query.trim() && !loading && results.length > 0 && (
-          <div className="mt-6">
-            <p className="text-xs text-muted mb-3">
-              {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
-            </p>
-            <div className="space-y-3">
-              {results.map((product) => (
-                <ProductListItem
-                  key={product.id}
-                  product={product}
-                  onClick={() => navigate(`/product/${product.id}`)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!query.trim() && recent.length === 0 && (
-          <div className="mt-12 text-center">
-            <Search size={48} className="mx-auto text-muted mb-4 opacity-40" />
-            <p className="text-sm text-muted">Search for clothes, shoes, brands...</p>
+        {query.trim() && !searching && results.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-muted mb-2">{results.length} results</p>
+            {results.map((product) => (
+              <ProductListItem
+                key={product.id}
+                product={product}
+                onClick={() => navigate(`/product/${product.id}`)}
+              />
+            ))}
           </div>
         )}
       </div>

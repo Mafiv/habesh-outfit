@@ -24,12 +24,35 @@ from orders.services import (
     merge_cart_items,
     resolve_address,
     items_to_order_items,
+    validate_stock,
+    decrement_stock,
 )
 from catalog.models import Product
 
 
 def get_user_id(request):
     return str(request.user.id)
+
+
+def _cart_items_payload(cart) -> list[dict]:
+    return [
+        {
+            'productId': i.product_id,
+            'title': i.title,
+            'quantity': i.quantity,
+            'price': i.price,
+            'size': i.size,
+            'color': i.color,
+        }
+        for i in cart.items
+    ]
+
+
+def _validate_cart_stock(cart) -> Response | None:
+    errors = validate_stock(_cart_items_payload(cart))
+    if errors:
+        return Response({'detail': errors[0], 'errors': errors}, status=400)
+    return None
 
 
 class CartView(APIView):
@@ -54,6 +77,11 @@ class CartView(APIView):
 
         if 'items' in data:
             cart.items = cart_items_from_request(data['items'])
+
+        stock_error = _validate_cart_stock(cart)
+        if stock_error:
+            return stock_error
+
         if 'promocode' in data:
             cart.promocode = data.get('promocode', '')
 
@@ -72,6 +100,11 @@ class CartView(APIView):
         cart = get_or_create_cart(user_id)
         incoming = cart_items_from_request(request.data.get('items', []))
         cart.items = merge_cart_items(list(cart.items), incoming)
+
+        stock_error = _validate_cart_stock(cart)
+        if stock_error:
+            return stock_error
+
         if request.data.get('promocode'):
             cart.promocode = request.data['promocode']
         cart.updated_at = datetime.utcnow()
@@ -98,6 +131,10 @@ class OrderListCreateView(APIView):
         user_id = get_user_id(request)
         items_data = data.get('items', [])
         promocode = data.get('promocode', '')
+
+        stock_errors = validate_stock(items_data)
+        if stock_errors:
+            return Response({'detail': stock_errors[0], 'errors': stock_errors}, status=400)
 
         totals = calculate_totals(
             [
@@ -134,7 +171,14 @@ class OrderListCreateView(APIView):
             stripe_session_id=data.get('stripeSessionId'),
         )
         order.save()
+        decrement_stock(order.items)
         clear_user_cart(user_id)
+
+        customer_email = getattr(request.user, 'email', '')
+        if customer_email:
+            from core.email import send_order_confirmation
+            send_order_confirmation(order, customer_email)
+
         return Response(order.to_dict(), status=status.HTTP_201_CREATED)
 
 
@@ -259,6 +303,17 @@ class ReviewListCreateView(APIView):
             comment=data['comment'],
         )
         review.save()
+
+        try:
+            product = Product.objects.get(id=ObjectId(data['productId']))
+            product_reviews = Review.objects.filter(product_id=str(product.id))
+            ratings = [r.rating for r in product_reviews]
+            product.review_count = len(ratings)
+            product.rating = round(sum(ratings) / len(ratings), 1) if ratings else data['rating']
+            product.save()
+        except (Product.DoesNotExist, InvalidId):
+            pass
+
         return Response(review.to_dict(), status=status.HTTP_201_CREATED)
 
 

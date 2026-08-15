@@ -6,6 +6,8 @@ export interface Product {
   originalPrice?: number
   rating: number
   reviewCount: number
+  stock?: number
+  inStock?: boolean
   image: string
   images: string[]
   category: string
@@ -124,4 +126,27 @@ export interface SavedPromocode {
   discount: number
   description: string
   expiresAt: string
+}
+
+export interface PaginatedProducts {
+  results: Product[]
+  count: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface ProductReview {
+  id: string
+  rating: number
+  comment: string
+  date: string
+  productTitle: string
+}
+
+export interface ProductReviewsResponse {
+  productId: string
+  averageRating: number
+  reviewCount: number
+  reviews: ProductReview[]
 }

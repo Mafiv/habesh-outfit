@@ -4,6 +4,7 @@ import { Minus, Plus, X } from 'lucide-react'
 import { Button } from '../components/Button'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../lib/api'
 
 export function CartPage() {
   const navigate = useNavigate()
@@ -19,17 +20,25 @@ export function CartPage() {
   } = useCart()
   const [promoInput, setPromoInput] = useState(promocode)
   const [promoError, setPromoError] = useState('')
+  const [promoLoading, setPromoLoading] = useState(false)
 
   const shipping = subtotal > 50 ? 0 : 9.99
   const total = subtotal - discount + shipping
 
-  const applyPromo = () => {
-    const valid = ['SAVE10', 'STYLE20'].includes(promoInput.toUpperCase())
-    if (valid) {
-      setPromocode(promoInput)
-      setPromoError('')
-    } else {
+  const applyPromo = async () => {
+    setPromoLoading(true)
+    setPromoError('')
+    try {
+      const result = await api.validatePromocode(promoInput)
+      if (result.valid) {
+        setPromocode(result.code)
+        setPromoError('')
+      }
+    } catch {
       setPromoError('Invalid promocode')
+      setPromocode('')
+    } finally {
+      setPromoLoading(false)
     }
   }
 
@@ -152,8 +161,8 @@ export function CartPage() {
               onChange={(e) => setPromoInput(e.target.value)}
               className="flex-1 h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg text-sm outline-none focus:border-primary"
             />
-            <Button variant="outline" size="sm" onClick={applyPromo} className="flex-shrink-0">
-              Apply
+            <Button variant="outline" size="sm" onClick={applyPromo} className="flex-shrink-0" disabled={promoLoading}>
+              {promoLoading ? '...' : 'Apply'}
             </Button>
           </div>
           {promoError && <p className="text-xs text-primary mt-1">{promoError}</p>}
