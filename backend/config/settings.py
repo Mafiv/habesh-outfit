@@ -61,6 +61,10 @@ BETTER_AUTH_SECRET = os.environ.get(
     'BETTER_AUTH_SECRET', 'dev-secret-change-in-production-min-32-chars!!'
 )
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get(
+    'STRIPE_PUBLISHABLE_KEY',
+    os.environ.get('VITE_STRIPE_PUBLISHABLE_KEY', ''),
+)
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 ADMIN_API_KEY = os.environ.get('ADMIN_API_KEY', '')

@@ -3,21 +3,31 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #db3022;
-  --color-primary-dark: #c4291c;
-  --color-dark: #1e1e1e;
-  --color-dark-surface: #2a2a2a;
-  --color-dark-elevated: #333333;
-  --color-muted: #9b9b9b;
-  --color-border: #e8e8e8;
-  --color-border-dark: #3a3a3a;
-  --font-sans: "Montserrat", system-ui, sans-serif;
+  --color-primary: #e63946;
+  --color-primary-dark: #c1121f;
+  --color-primary-soft: #fef2f2;
+  --color-accent: #ffb703;
+  --color-dark: #0f1117;
+  --color-dark-surface: #1a1d27;
+  --color-dark-elevated: #252936;
+  --color-muted: #6b7280;
+  --color-muted-light: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-dark: #2f3543;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --shadow-soft: 0 4px 24px -4px rgb(15 17 23 / 0.08);
+  --shadow-card: 0 8px 32px -8px rgb(15 17 23 / 0.12);
+  --shadow-float: 0 12px 40px -12px rgb(15 17 23 / 0.18);
 }
 
 .dark {
-  --color-primary: #ffb800;
-  --color-primary-dark: #e6a600;
-  --color-muted: #888888;
+  --color-primary: #ff6b6b;
+  --color-primary-dark: #ee5a5a;
+  --color-primary-soft: #2a1a1a;
+  --color-muted: #9ca3af;
+  --shadow-soft: 0 4px 24px -4px rgb(0 0 0 / 0.35);
+  --shadow-card: 0 8px 32px -8px rgb(0 0 0 / 0.45);
+  --shadow-float: 0 12px 40px -12px rgb(0 0 0 / 0.55);
 }
 
 * {
@@ -30,15 +40,17 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: #f5f5f5;
-  color: #222;
+  background: #f4f6fb;
+  color: #111827;
   margin: 0;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .dark body {
   background: var(--color-dark);
-  color: #f5f5f5;
+  color: #f3f4f6;
 }
 
 #root {
@@ -59,17 +71,74 @@ body {
 }
 
 @utility surface-page {
-  @apply bg-[#f5f5f5] dark:bg-dark;
+  @apply bg-[#f4f6fb] dark:bg-dark;
 }
 
 @utility surface-input {
-  @apply bg-[#f9f9f9] dark:bg-dark-elevated border border-border dark:border-border-dark;
+  @apply bg-white dark:bg-dark-elevated border border-border dark:border-border-dark;
 }
 
 @utility text-body {
-  @apply text-[#222] dark:text-gray-100;
+  @apply text-gray-900 dark:text-gray-100;
 }
 
 @utility border-default {
   @apply border-border dark:border-border-dark;
+}
+
+@utility glass {
+  @apply bg-white/75 dark:bg-dark-surface/75 backdrop-blur-xl border border-white/60 dark:border-white/10;
+}
+
+@utility card-modern {
+  @apply surface rounded-2xl border border-default;
+  box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+@utility shadow-float {
+  box-shadow: var(--shadow-float);
+}
+
+@utility gradient-hero {
+  background: linear-gradient(135deg, #1a1d27 0%, #374151 50%, #e63946 100%);
+}
+
+@utility gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+@utility section-label {
+  @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted;
+}
+
+@utility page-title {
+  @apply text-2xl font-bold tracking-tight text-body;
+}
+
+@utility focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-dark;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.page-mesh {
+  background-image:
+    radial-gradient(at 0% 0%, rgb(230 57 70 / 0.06) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgb(255 183 3 / 0.05) 0, transparent 45%);
+}
+
+.dark .page-mesh {
+  background-image:
+    radial-gradient(at 0% 0%, rgb(255 107 107 / 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgb(255 183 3 / 0.04) 0, transparent 45%);
 }

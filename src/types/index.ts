@@ -109,6 +109,7 @@ export interface PaymentMethod {
   last4?: string
   brand?: string
   isDefault?: boolean
+  stripePaymentMethodId?: string
 }
 
 export interface Review {

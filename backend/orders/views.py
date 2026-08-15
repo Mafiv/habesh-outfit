@@ -270,7 +270,13 @@ class PaymentMethodDetailView(APIView):
             method = PaymentMethod.objects.get(id=ObjectId(pk), user_id=get_user_id(request))
         except (PaymentMethod.DoesNotExist, InvalidId):
             return Response({'detail': 'Not found.'}, status=404)
-        method.delete()
+
+        if method.stripe_payment_method_id:
+            from payments.stripe_service import detach_stripe_payment_method
+            detach_stripe_payment_method(get_user_id(request), method)
+        else:
+            method.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, pk):

@@ -43,6 +43,7 @@ services:
       DJANGO_SECRET_KEY: django-dev-secret-change-me
       DEBUG: "True"
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-dev-admin-key-change-me}
       EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend

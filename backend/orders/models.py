@@ -159,6 +159,7 @@ class PaymentMethod(Document):
     label = StringField(required=True)
     last4 = StringField()
     brand = StringField()
+    stripe_payment_method_id = StringField()
     is_default = BooleanField(default=False)
 
     def to_dict(self):
@@ -169,6 +170,7 @@ class PaymentMethod(Document):
             'last4': self.last4,
             'brand': self.brand,
             'isDefault': self.is_default,
+            'stripePaymentMethodId': self.stripe_payment_method_id,
         }
 
 

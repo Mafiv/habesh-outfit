@@ -79,18 +79,18 @@ export function SearchPage() {
   }
 
   return (
-    <div className="pb-24 min-h-screen surface-page">
+    <div className="pb-28 min-h-screen page-mesh">
       <PageHeader title="Search" />
 
       <div className="max-w-lg mx-auto px-4 pt-2">
         <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
           <input
             type="search"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search products, brands..."
-            className="w-full h-12 pl-10 pr-10 surface-input rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full h-12 pl-11 pr-11 card-modern text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             autoFocus
           />
           {query && (

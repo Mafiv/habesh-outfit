@@ -1,31 +1,82 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SlidersHorizontal } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { ProductCard } from '../components/ProductCard'
 import { ViewToggle, ProductListItem } from '../components/CatalogHelpers'
 import { categories } from '../data/products'
-import { useProducts } from '../context/ProductsContext'
 import { ProductGridSkeleton } from '../components/ui/ProductGridSkeleton'
 import { EmptyState } from '../components/ui/EmptyState'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { api } from '../lib/api'
+import type { Product } from '../types'
 import { Package } from 'lucide-react'
+
+const PAGE_SIZE = 12
 
 export function CatalogPage() {
   const { gender, subcategory } = useParams()
   const navigate = useNavigate()
-  const { getProductsByCategory, loading } = useProducts()
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'low' | 'high'>('low')
+  const [products, setProducts] = useState<Product[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const loaderRef = useRef<HTMLDivElement>(null)
 
   const cat = categories.find((c) => c.gender === gender)
   const title = subcategory
     ? `${cat?.name ?? ''} · ${subcategory}`
     : cat?.name ?? 'Catalog'
 
-  let products = getProductsByCategory(gender, subcategory)
-  products = [...products].sort((a, b) =>
-    sortBy === 'low' ? a.price - b.price : b.price - a.price
+  const loadProducts = useCallback(
+    async (pageNum: number, reset: boolean) => {
+      if (reset) setLoading(true)
+      else setLoadingMore(true)
+
+      try {
+        const data = await api.getProducts({
+          gender,
+          subcategory,
+          sort: sortBy,
+          page: pageNum,
+          pageSize: PAGE_SIZE,
+          inStock: true,
+        })
+        setProducts((prev) => (reset ? data.results : [...prev, ...data.results]))
+        setTotalPages(data.totalPages)
+        setPage(pageNum)
+      } catch {
+        if (reset) setProducts([])
+      } finally {
+        setLoading(false)
+        setLoadingMore(false)
+      }
+    },
+    [gender, subcategory, sortBy]
   )
+
+  useEffect(() => {
+    loadProducts(1, true)
+  }, [loadProducts])
+
+  useEffect(() => {
+    const node = loaderRef.current
+    if (!node || loading || loadingMore || page >= totalPages) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadProducts(page + 1, false)
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [loading, loadingMore, page, totalPages, loadProducts])
 
   return (
     <div className="pb-24">
@@ -36,7 +87,7 @@ export function CatalogPage() {
       />
 
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between px-4 py-3 surface border-b border-default">
+        <div className="flex items-center justify-between px-4 py-3 mx-4 mt-2 card-modern">
           <button
             type="button"
             onClick={() => navigate(`/catalog/${gender}/${subcategory ?? 'New'}/filters`)}
@@ -87,6 +138,12 @@ export function CatalogPage() {
                   onClick={() => navigate(`/product/${product.id}`)}
                 />
               ))}
+            </div>
+          )}
+
+          {!loading && page < totalPages && (
+            <div ref={loaderRef} className="py-6 flex justify-center">
+              {loadingMore && <LoadingSpinner label="Loading more..." />}
             </div>
           )}
         </div>
