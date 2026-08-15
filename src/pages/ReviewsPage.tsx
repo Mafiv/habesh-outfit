@@ -5,19 +5,22 @@ import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { useUserData } from '../context/UserDataContext'
 import { products } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 
 export function ReviewsPage() {
   const navigate = useNavigate()
   const { reviews, addReview, removeReview } = useUserData()
   const [showForm, setShowForm] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(products[0].id)
+  const { products: catalogProducts } = useProducts()
+  const productList = catalogProducts.length ? catalogProducts : products
+  const [selectedProduct, setSelectedProduct] = useState(productList[0]?.id ?? '')
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const product = products.find((p) => p.id === selectedProduct)!
-    addReview({
+    const product = productList.find((p) => p.id === selectedProduct)!
+    await addReview({
       productId: product.id,
       productTitle: product.title,
       productImage: product.image,
@@ -57,7 +60,7 @@ export function ReviewsPage() {
               onChange={(e) => setSelectedProduct(e.target.value)}
               className="w-full h-12 px-4 surface-input rounded-lg text-sm outline-none"
             >
-              {products.map((p) => (
+              {productList.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.title}
                 </option>

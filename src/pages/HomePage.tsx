@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { ProductCard } from '../components/ProductCard'
-import { categoryChips, getNewProducts, getSaleProducts } from '../data/products'
+import { categoryChips } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 
 export function HomePage() {
   const navigate = useNavigate()
+  const { getNewProducts, getSaleProducts } = useProducts()
   const newProducts = getNewProducts()
   const saleProducts = getSaleProducts()
 

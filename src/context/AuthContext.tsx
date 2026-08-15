@@ -1,39 +1,51 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import type { User } from '../types'
+import {
+  createContext,
+  useContext,
+  useCallback,
+  type ReactNode,
+} from 'react'
+import { authClient } from '../lib/auth-client'
+
+interface User {
+  name: string
+  email: string
+  id: string
+}
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => boolean
-  signup: (name: string, email: string, password: string) => boolean
-  logout: () => void
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<boolean>
+  signup: (name: string, email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('stylish_user')
-    return saved ? JSON.parse(saved) : null
-  })
+  const { data: session, isPending } = authClient.useSession()
 
-  const login = useCallback((email: string, _password: string) => {
-    const u = { name: email.split('@')[0], email }
-    setUser(u)
-    localStorage.setItem('stylish_user', JSON.stringify(u))
-    return true
+  const user: User | null = session?.user
+    ? {
+        id: session.user.id,
+        name: session.user.name || session.user.email.split('@')[0],
+        email: session.user.email,
+      }
+    : null
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await authClient.signIn.email({ email, password })
+    return !error
   }, [])
 
-  const signup = useCallback((name: string, email: string, _password: string) => {
-    const u = { name, email }
-    setUser(u)
-    localStorage.setItem('stylish_user', JSON.stringify(u))
-    return true
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    const { error } = await authClient.signUp.email({ name, email, password })
+    return !error
   }, [])
 
-  const logout = useCallback(() => {
-    setUser(null)
-    localStorage.removeItem('stylish_user')
+  const logout = useCallback(async () => {
+    await authClient.signOut()
   }, [])
 
   return (
@@ -41,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading: isPending,
         login,
         signup,
         logout,

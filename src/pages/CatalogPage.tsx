@@ -4,11 +4,13 @@ import { SlidersHorizontal } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { ProductCard } from '../components/ProductCard'
 import { ViewToggle, ProductListItem } from '../components/CatalogHelpers'
-import { getProductsByCategory, categories } from '../data/products'
+import { categories } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 
 export function CatalogPage() {
   const { gender, subcategory } = useParams()
   const navigate = useNavigate()
+  const { getProductsByCategory } = useProducts()
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'low' | 'high'>('low')
 

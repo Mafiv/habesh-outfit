@@ -10,11 +10,14 @@ export function SignUpPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    signup(name, email, password)
-    navigate('/')
+    setError('')
+    const ok = await signup(name, email, password)
+    if (ok) navigate('/')
+    else setError('Sign up failed. Try a different email.')
   }
 
   return (
@@ -47,6 +50,7 @@ export function SignUpPage() {
         <Button type="submit" fullWidth size="lg">
           Sign up
         </Button>
+        {error && <p className="text-sm text-primary text-center">{error}</p>}
       </form>
 
       <div className="mt-8">

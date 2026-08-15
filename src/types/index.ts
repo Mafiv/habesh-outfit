@@ -35,6 +35,7 @@ export interface Address {
 }
 
 export interface User {
+  id?: string
   name: string
   email: string
 }
@@ -61,6 +62,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string
+  mongoId?: string
   date: string
   status: OrderStatus
   items: OrderItem[]

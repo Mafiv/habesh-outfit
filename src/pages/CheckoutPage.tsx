@@ -4,12 +4,13 @@ import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { useCart } from '../context/CartContext'
 import { useAddresses, useOrders, useUserData } from '../context/UserDataContext'
+import { api } from '../lib/api'
 
 type Step = 'address' | 'payment' | 'review'
 
 export function CheckoutPage() {
   const navigate = useNavigate()
-  const { items, subtotal, discount, clearCart } = useCart()
+  const { items, subtotal, discount, clearCart, promocode } = useCart()
   const { addresses } = useAddresses()
   const { paymentMethods } = useUserData()
   const { createOrder } = useOrders()
@@ -23,8 +24,28 @@ export function CheckoutPage() {
   const shipping = subtotal > 50 ? 0 : 9.99
   const total = subtotal - discount + shipping
 
-  const submitOrder = () => {
-    createOrder({
+  const submitOrder = async () => {
+    try {
+      const { url } = await api.createCheckoutSession({
+        items: items.map((i) => ({
+          productId: i.product.id,
+          title: i.product.title,
+          price: i.product.price,
+          quantity: i.quantity,
+          size: i.size,
+        })),
+        promocode,
+      })
+      if (url) {
+        clearCart()
+        window.location.href = url
+        return
+      }
+    } catch {
+      /* fall through to direct order creation */
+    }
+
+    await createOrder({
       items: [...items],
       subtotal,
       discount,

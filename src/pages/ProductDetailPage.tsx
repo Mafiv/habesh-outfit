@@ -5,13 +5,14 @@ import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { StarRating } from '../components/StarRating'
 import { ProductCard } from '../components/ProductCard'
-import { getProduct, getRelatedProducts } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 import { useCart } from '../context/CartContext'
 import { useFavorites } from '../context/FavoritesContext'
 
 export function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { getProduct, getRelatedProducts } = useProducts()
   const product = getProduct(id ?? '')
   const { addItem } = useCart()
   const { isFavorite, toggleFavorite } = useFavorites()

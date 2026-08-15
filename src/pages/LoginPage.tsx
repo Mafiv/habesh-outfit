@@ -9,11 +9,14 @@ export function LoginPage() {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    login(email, password)
-    navigate('/')
+    setError('')
+    const ok = await login(email, password)
+    if (ok) navigate('/')
+    else setError('Invalid email or password')
   }
 
   return (
@@ -49,6 +52,7 @@ export function LoginPage() {
         <Button type="submit" fullWidth size="lg">
           Login
         </Button>
+        {error && <p className="text-sm text-primary text-center">{error}</p>}
       </form>
 
       <div className="mt-8">

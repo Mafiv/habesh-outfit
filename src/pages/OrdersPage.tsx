@@ -54,7 +54,7 @@ export function OrdersPage() {
             <button
               key={order.id}
               type="button"
-              onClick={() => navigate(`/orders/${order.id}`)}
+              onClick={() => navigate(`/orders/${order.mongoId || order.id}`)}
               className="w-full surface rounded-xl p-4 shadow-sm text-left border border-default"
             >
               <div className="flex items-center justify-between mb-3">
@@ -102,7 +102,7 @@ export function OrdersPage() {
 export function OrderTrackingPage() {
   const { orderId } = useParams()
   const { orders } = useOrders()
-  const order = orders.find((o) => o.id === orderId)
+  const order = orders.find((o) => o.mongoId === orderId || o.id === orderId)
 
   if (!order) {
     return (
