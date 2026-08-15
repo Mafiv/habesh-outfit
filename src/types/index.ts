@@ -25,6 +25,26 @@ export interface CartItem {
   quantity: number
 }
 
+export interface CartItemPayload {
+  productId: string
+  title: string
+  brand?: string
+  image?: string
+  size: string
+  color?: string
+  quantity: number
+  price: number
+}
+
+export interface CartResponse {
+  items: CartItemPayload[]
+  promocode: string
+  subtotal: number
+  discount: number
+  shipping: number
+  total: number
+}
+
 export interface Address {
   id: string
   name: string
@@ -47,7 +67,13 @@ export type Category = {
   subcategories: string[]
 }
 
-export type OrderStatus = 'processing' | 'shipped' | 'in_transit' | 'delivered'
+export type OrderStatus =
+  | 'pending_payment'
+  | 'processing'
+  | 'shipped'
+  | 'in_transit'
+  | 'delivered'
+  | 'cancelled'
 
 export interface OrderItem {
   productId: string

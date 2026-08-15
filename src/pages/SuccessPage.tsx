@@ -1,11 +1,20 @@
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Button } from '../components/Button'
+import { useCart } from '../context/CartContext'
 
 export function SuccessPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const isStripe = Boolean(sessionId)
+  const { clearCart } = useCart()
+
+  useEffect(() => {
+    if (isStripe) {
+      clearCart()
+    }
+  }, [isStripe, clearCart])
 
   return (
     <div className="min-h-screen surface-page flex flex-col items-center justify-center px-4">

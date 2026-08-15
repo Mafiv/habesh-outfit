@@ -1,5 +1,5 @@
 import { getAuthToken } from './auth-client'
-import type { Product, Address, Order, PaymentMethod, Review, SavedPromocode } from '../types'
+import type { Product, Address, Order, PaymentMethod, Review, SavedPromocode, CartResponse, CartItemPayload } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -46,6 +46,17 @@ export const api = {
 
   getRelatedProducts: (id: string) =>
     request<Product[]>(`/catalog/products/${id}/related/`),
+
+  // Cart (auth required)
+  getCart: () => request<CartResponse>('/cart/', {}, true),
+
+  syncCart: (data: { items: CartItemPayload[]; promocode?: string }) =>
+    request<CartResponse>('/cart/', { method: 'POST', body: JSON.stringify(data) }, true),
+
+  updateCart: (data: { items: CartItemPayload[]; promocode?: string }) =>
+    request<CartResponse>('/cart/', { method: 'PUT', body: JSON.stringify(data) }, true),
+
+  clearCart: () => request<void>('/cart/', { method: 'DELETE' }, true),
 
   // Orders (auth required)
   getOrders: () => request<Order[]>('/orders/', {}, true),
@@ -105,6 +116,13 @@ export const api = {
 
   // Promocodes
   getPromocodes: () => request<SavedPromocode[]>('/payments/promocodes/', {}, true),
+
+  validatePromocode: (code: string) =>
+    request<{ valid: boolean; code: string; discount: number; description?: string }>(
+      '/payments/validate-promocode/',
+      { method: 'POST', body: JSON.stringify({ code }) },
+      true
+    ),
 
   // Stripe
   createCheckoutSession: (data: object) =>

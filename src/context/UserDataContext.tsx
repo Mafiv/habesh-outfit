@@ -30,6 +30,7 @@ interface UserDataContextType {
     shipping: number
     total: number
     addressId: string
+    promocode?: string
   }) => Promise<Order>
   addReview: (review: Omit<Review, 'id' | 'date'>) => Promise<void>
   removeReview: (id: string) => Promise<void>
@@ -119,6 +120,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     shipping: number
     total: number
     addressId: string
+    promocode?: string
   }) => {
     const addr = addresses.find((a) => a.id === params.addressId) ?? addresses[0]
     const order = await api.createOrder({
@@ -136,6 +138,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       discount: params.discount,
       shipping: params.shipping,
       total: params.total,
+      promocode: params.promocode ?? '',
       address: addr
         ? { name: addr.name, address: addr.address, city: addr.city, zip: addr.zip }
         : undefined,

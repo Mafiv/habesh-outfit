@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { CartItem, Product } from '../types'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
+import type { CartItem, Product, CartItemPayload } from '../types'
+import { api } from '../lib/api'
+import { useAuth } from './AuthContext'
 
 interface CartContextType {
   items: CartItem[]
@@ -12,6 +14,7 @@ interface CartContextType {
   promocode: string
   setPromocode: (code: string) => void
   discount: number
+  syncing: boolean
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -34,15 +37,120 @@ function loadCart(): CartItem[] {
   }
 }
 
+function toPayload(items: CartItem[]): CartItemPayload[] {
+  return items.map((i) => ({
+    productId: i.product.id,
+    title: i.product.title,
+    brand: i.product.brand,
+    image: i.product.image,
+    size: i.size,
+    color: i.color,
+    quantity: i.quantity,
+    price: i.product.price,
+  }))
+}
+
+function payloadToCartItem(item: CartItemPayload): CartItem {
+  return {
+    product: {
+      id: item.productId,
+      title: item.title,
+      brand: item.brand ?? '',
+      price: item.price,
+      rating: 0,
+      reviewCount: 0,
+      image: item.image ?? '',
+      images: item.image ? [item.image] : [],
+      category: '',
+      subcategory: '',
+      gender: 'women',
+      colors: [],
+      sizes: [],
+      description: '',
+    },
+    size: item.size,
+    color: item.color ?? '',
+    quantity: item.quantity,
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth()
   const [items, setItems] = useState<CartItem[]>(loadCart)
   const [promocode, setPromocodeState] = useState(
     () => localStorage.getItem(PROMO_KEY) ?? ''
   )
+  const [syncing, setSyncing] = useState(false)
+  const skipNextSync = useRef(false)
+  const hydratedFromServer = useRef(false)
 
   useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(items))
-  }, [items])
+    if (!isAuthenticated) {
+      hydratedFromServer.current = false
+      return
+    }
+
+    let cancelled = false
+    async function loadServerCart() {
+      setSyncing(true)
+      try {
+        const localItems = loadCart()
+        const localPromo = localStorage.getItem(PROMO_KEY) ?? ''
+
+        const serverCart = localItems.length
+          ? await api.syncCart({ items: toPayload(localItems), promocode: localPromo })
+          : await api.getCart()
+
+        if (cancelled) return
+
+        skipNextSync.current = true
+        setItems(serverCart.items.map(payloadToCartItem))
+        setPromocodeState(serverCart.promocode || localPromo)
+        hydratedFromServer.current = true
+        localStorage.removeItem(CART_KEY)
+      } catch {
+        hydratedFromServer.current = true
+      } finally {
+        if (!cancelled) setSyncing(false)
+      }
+    }
+
+    loadServerCart()
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      localStorage.setItem(CART_KEY, JSON.stringify(items))
+    }
+  }, [items, isAuthenticated])
+
+  useEffect(() => {
+    localStorage.setItem(PROMO_KEY, promocode)
+  }, [promocode])
+
+  useEffect(() => {
+    if (!isAuthenticated || !hydratedFromServer.current) return
+    if (skipNextSync.current) {
+      skipNextSync.current = false
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setSyncing(true)
+      try {
+        await api.updateCart({ items: toPayload(items), promocode })
+      } catch {
+        /* keep local state */
+      } finally {
+        setSyncing(false)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [items, promocode, isAuthenticated])
 
   const setPromocode = useCallback((code: string) => {
     setPromocodeState(code)
@@ -105,7 +213,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => {
     setItems([])
     localStorage.removeItem(CART_KEY)
-  }, [])
+    if (isAuthenticated) {
+      api.clearCart().catch(() => {})
+    }
+  }, [isAuthenticated])
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce(
@@ -128,6 +239,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         promocode,
         setPromocode,
         discount,
+        syncing,
       }}
     >
       {children}

@@ -33,13 +33,58 @@ class OrderItem(EmbeddedDocument):
     price = FloatField(required=True)
 
 
+class CartItem(EmbeddedDocument):
+    product_id = StringField(required=True)
+    title = StringField(required=True)
+    brand = StringField(default='')
+    image = StringField(default='')
+    size = StringField(required=True)
+    color = StringField(default='')
+    quantity = IntField(default=1)
+    price = FloatField(required=True)
+
+
+class Cart(Document):
+    meta = {'collection': 'carts', 'indexes': ['user_id']}
+
+    user_id = StringField(required=True, unique=True)
+    items = ListField(EmbeddedDocumentField(CartItem), default=list)
+    promocode = StringField(default='')
+    updated_at = DateTimeField(default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'items': [
+                {
+                    'productId': i.product_id,
+                    'title': i.title,
+                    'brand': i.brand,
+                    'image': i.image,
+                    'size': i.size,
+                    'color': i.color,
+                    'quantity': i.quantity,
+                    'price': i.price,
+                }
+                for i in self.items
+            ],
+            'promocode': self.promocode,
+        }
+
+
 class Order(Document):
     meta = {'collection': 'orders', 'indexes': ['user_id', '-created_at']}
 
     user_id = StringField(required=True)
     status = StringField(
         default='processing',
-        choices=['processing', 'shipped', 'in_transit', 'delivered'],
+        choices=[
+            'pending_payment',
+            'processing',
+            'shipped',
+            'in_transit',
+            'delivered',
+            'cancelled',
+        ],
     )
     items = ListField(EmbeddedDocumentField(OrderItem), default=list)
     subtotal = FloatField(default=0)

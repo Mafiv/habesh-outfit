@@ -4,18 +4,20 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from bson import ObjectId
 
 from orders.models import Order
-from bson import ObjectId
+from orders.services import (
+    PROMO_CODES,
+    calculate_totals,
+    create_pending_order,
+    complete_order_payment,
+    cancel_pending_order,
+    validate_promocode,
+)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
-PROMO_CODES = {
-    'SAVE10': 0.10,
-    'STYLE20': 0.20,
-    'WELCOME15': 0.15,
-}
 
 
 class CreateCheckoutSessionView(APIView):
@@ -28,8 +30,16 @@ class CreateCheckoutSessionView(APIView):
 
         data = request.data
         items = data.get('items', [])
-        promocode = data.get('promocode', '').upper()
-        discount_rate = PROMO_CODES.get(promocode, 0)
+        if not items:
+            return Response({'detail': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        promocode = data.get('promocode', '')
+        address_id = data.get('addressId')
+        user_id = str(request.user.id)
+
+        order = create_pending_order(user_id, items, promocode, address_id)
+        totals = calculate_totals(items, promocode)
+        discount_rate = totals['discountRate']
 
         line_items = []
         for item in items:
@@ -51,33 +61,39 @@ class CreateCheckoutSessionView(APIView):
                 'quantity': item.get('quantity', 1),
             })
 
-        subtotal = sum(i['price'] * i.get('quantity', 1) for i in items)
-        shipping = 0 if subtotal > 50 else 999
-
-        if shipping:
+        if totals['shipping'] > 0:
             line_items.append({
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {'name': 'Shipping'},
-                    'unit_amount': shipping,
+                    'unit_amount': int(totals['shipping'] * 100),
                 },
                 'quantity': 1,
             })
 
-        session = stripe.checkout.Session.create(
-            mode='payment',
-            line_items=line_items,
-            success_url=f'{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}',
-            cancel_url=f'{settings.FRONTEND_URL}/bag',
-            metadata={
-                'user_id': str(request.user.id),
-                'promocode': promocode,
-            },
-        )
+        try:
+            session = stripe.checkout.Session.create(
+                mode='payment',
+                line_items=line_items,
+                success_url=f'{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}',
+                cancel_url=f'{settings.FRONTEND_URL}/bag',
+                metadata={
+                    'user_id': user_id,
+                    'order_id': str(order.id),
+                    'promocode': promocode.upper(),
+                },
+            )
+        except stripe.error.StripeError as exc:
+            cancel_pending_order(order)
+            return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        order.stripe_session_id = session.id
+        order.save()
 
         return Response({
             'sessionId': session.id,
             'url': session.url,
+            'orderId': str(order.id),
         })
 
 
@@ -105,10 +121,17 @@ class StripeWebhookView(APIView):
             if order_id and ObjectId.is_valid(order_id):
                 try:
                     order = Order.objects.get(id=ObjectId(order_id))
-                    order.stripe_session_id = session['id']
-                    order.stripe_payment_intent = session.get('payment_intent', '')
-                    order.status = 'shipped'
-                    order.save()
+                    complete_order_payment(order, session)
+                except Order.DoesNotExist:
+                    pass
+
+        elif event['type'] == 'checkout.session.expired':
+            session = event['data']['object']
+            order_id = session.get('metadata', {}).get('order_id')
+            if order_id and ObjectId.is_valid(order_id):
+                try:
+                    order = Order.objects.get(id=ObjectId(order_id))
+                    cancel_pending_order(order)
                 except Order.DoesNotExist:
                     pass
 
@@ -126,3 +149,12 @@ class PromocodesView(APIView):
             }
             for code, rate in PROMO_CODES.items()
         ])
+
+
+class ValidatePromocodeView(APIView):
+    def post(self, request):
+        code = request.data.get('code', '')
+        result = validate_promocode(code)
+        if not result['valid']:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)

@@ -30,14 +30,17 @@ export function CheckoutPage() {
         items: items.map((i) => ({
           productId: i.product.id,
           title: i.product.title,
+          brand: i.product.brand,
+          image: i.product.image,
           price: i.product.price,
           quantity: i.quantity,
           size: i.size,
+          color: i.color,
         })),
         promocode,
+        addressId: selectedAddress,
       })
       if (url) {
-        clearCart()
         window.location.href = url
         return
       }
@@ -52,6 +55,7 @@ export function CheckoutPage() {
       shipping,
       total,
       addressId: selectedAddress,
+      promocode,
     })
     clearCart()
     navigate('/success')

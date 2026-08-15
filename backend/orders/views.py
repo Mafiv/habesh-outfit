@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,11 +16,76 @@ from orders.models import (
     Address,
     generate_tracking_number,
 )
+from orders.services import (
+    calculate_totals,
+    get_or_create_cart,
+    clear_user_cart,
+    cart_items_from_request,
+    merge_cart_items,
+    resolve_address,
+    items_to_order_items,
+)
 from catalog.models import Product
 
 
 def get_user_id(request):
     return str(request.user.id)
+
+
+class CartView(APIView):
+    def get(self, request):
+        cart = get_or_create_cart(get_user_id(request))
+        totals = calculate_totals(
+            [
+                {
+                    'price': i.price,
+                    'quantity': i.quantity,
+                }
+                for i in cart.items
+            ],
+            cart.promocode,
+        )
+        return Response({**cart.to_dict(), **totals})
+
+    def put(self, request):
+        user_id = get_user_id(request)
+        cart = get_or_create_cart(user_id)
+        data = request.data
+
+        if 'items' in data:
+            cart.items = cart_items_from_request(data['items'])
+        if 'promocode' in data:
+            cart.promocode = data.get('promocode', '')
+
+        cart.updated_at = datetime.utcnow()
+        cart.save()
+
+        totals = calculate_totals(
+            [{'price': i.price, 'quantity': i.quantity} for i in cart.items],
+            cart.promocode,
+        )
+        return Response({**cart.to_dict(), **totals})
+
+    def post(self, request):
+        """Merge guest cart items into the user's server cart."""
+        user_id = get_user_id(request)
+        cart = get_or_create_cart(user_id)
+        incoming = cart_items_from_request(request.data.get('items', []))
+        cart.items = merge_cart_items(list(cart.items), incoming)
+        if request.data.get('promocode'):
+            cart.promocode = request.data['promocode']
+        cart.updated_at = datetime.utcnow()
+        cart.save()
+
+        totals = calculate_totals(
+            [{'price': i.price, 'quantity': i.quantity} for i in cart.items],
+            cart.promocode,
+        )
+        return Response({**cart.to_dict(), **totals})
+
+    def delete(self, request):
+        clear_user_cart(get_user_id(request))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class OrderListCreateView(APIView):
@@ -28,45 +95,46 @@ class OrderListCreateView(APIView):
 
     def post(self, request):
         data = request.data
+        user_id = get_user_id(request)
         items_data = data.get('items', [])
-        address_data = data.get('address')
+        promocode = data.get('promocode', '')
 
-        order_items = []
-        for item in items_data:
-            order_items.append(
-                OrderItem(
-                    product_id=item['productId'],
-                    title=item['title'],
-                    brand=item.get('brand', ''),
-                    image=item.get('image', ''),
-                    size=item['size'],
-                    color=item.get('color', ''),
-                    quantity=item.get('quantity', 1),
-                    price=item['price'],
-                )
-            )
+        totals = calculate_totals(
+            [
+                {
+                    'price': item.get('price', 0),
+                    'quantity': item.get('quantity', 1),
+                }
+                for item in items_data
+            ],
+            promocode,
+        )
 
         address = None
-        if address_data:
+        if data.get('address'):
+            addr = data['address']
             address = Address(
-                name=address_data['name'],
-                address=address_data['address'],
-                city=address_data['city'],
-                zip=address_data['zip'],
+                name=addr['name'],
+                address=addr['address'],
+                city=addr['city'],
+                zip=addr['zip'],
             )
+        elif data.get('addressId'):
+            address = resolve_address(user_id, data['addressId'])
 
         order = Order(
-            user_id=get_user_id(request),
-            items=order_items,
-            subtotal=data.get('subtotal', 0),
-            discount=data.get('discount', 0),
-            shipping=data.get('shipping', 0),
-            total=data.get('total', 0),
+            user_id=user_id,
+            items=items_to_order_items(items_data),
+            subtotal=data.get('subtotal', totals['subtotal']),
+            discount=data.get('discount', totals['discount']),
+            shipping=data.get('shipping', totals['shipping']),
+            total=data.get('total', totals['total']),
             address=address,
             tracking_number=generate_tracking_number(),
             stripe_session_id=data.get('stripeSessionId'),
         )
         order.save()
+        clear_user_cart(user_id)
         return Response(order.to_dict(), status=status.HTTP_201_CREATED)
 
 
