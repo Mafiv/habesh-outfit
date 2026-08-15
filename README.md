@@ -1,42 +1,140 @@
-# Stylish — Mobile E-Commerce Web App
+# Habesh Outfit — Full-Stack E-Commerce
 
-A mobile-first e-commerce web application inspired by the [Figma E-Commerce App Design (Community)](https://www.figma.com/design/CwLT9tJxdTeYq8wYCfTfc8/E-Commerce-App-Design--Community-?node-id=0-1).
+Mobile-first e-commerce app with **React** frontend, **Django** API, **Better Auth** authentication, **MongoDB** database, and **Stripe** payments.
 
-## Features
+## Architecture
 
-- **Home** — Hero banner, category chips, New & Sale product carousels
-- **Shop / Categories** — Women, Men, Kids with subcategories
-- **Catalog** — Grid & list views with sort and filters
-- **Product Detail** — Size/color selectors, favorites, related products
-- **Cart & Checkout** — Quantity controls, promocodes, multi-step checkout
-- **Auth** — Login, sign up, forgot password with social login UI
-- **Profile & Settings** — User menu, notification toggles
-- **Favorites** — Save products with persistent local storage
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  React (Vite)   │────▶│  Better Auth     │────▶│    MongoDB      │
+│  :5173          │     │  (Node) :3001    │     │    :27017       │
+└────────┬────────┘     └──────────────────┘     └────────▲────────┘
+         │                                                 │
+         │  JWT Bearer token                               │
+         ▼                                                 │
+┌─────────────────┐────────────────────────────────────────┘
+│  Django REST    │
+│  API :8000      │────▶ Stripe Checkout
+└─────────────────┘
+```
 
-## Tech Stack
+| Service | Tech | Port | Purpose |
+|---------|------|------|---------|
+| **Frontend** | React + Vite + Tailwind | 5173 | Mobile UI |
+| **Auth** | Better Auth + Express + MongoDB | 3001 | Login, signup, JWT tokens |
+| **API** | Django + DRF + mongoengine | 8000 | Products, orders, addresses, reviews |
+| **Database** | MongoDB | 27017 | Shared by auth + API |
+| **Payments** | Stripe | — | Checkout sessions + webhooks |
 
-- React 19 + TypeScript
-- Vite
-- Tailwind CSS v4
-- React Router
-- Lucide React icons
+> **Note:** [Better Auth](https://www.better-auth.com) is TypeScript-only. It runs as a separate Node service. Django verifies JWT tokens issued by Better Auth using the shared `BETTER_AUTH_SECRET`.
 
-## Getting Started
+## Prerequisites
+
+- Node.js 20+
+- Python 3.12+
+- MongoDB 7+ (via Docker or local install)
+- Stripe test keys (optional, for payments)
+
+## Quick Start
+
+### 1. Start MongoDB (or full stack)
 
 ```bash
+# MongoDB only
+docker compose up -d mongodb
+
+# Full stack (MongoDB + Auth + Django API)
+docker compose up -d
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env with your Stripe keys if needed
+cp auth-service/.env.example auth-service/.env
+```
+
+### 3. Install dependencies
+
+```bash
+# Frontend
 npm install
+
+# Auth service
+cd auth-service && npm install && cd ..
+
+# Django API
+pip install -r backend/requirements.txt
+```
+
+### 4. Seed product catalog
+
+```bash
+cd backend && python3 manage.py seed_products
+```
+
+### 5. Run all services
+
+```bash
+# Terminal 1 — Auth (Better Auth)
+cd auth-service && npm run dev
+
+# Terminal 2 — Django API
+cd backend && python3 manage.py runserver 8000
+
+# Terminal 3 — Frontend
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser. The app is optimized for mobile viewports — use DevTools device mode or resize to ~390px width for the best experience.
+Open http://localhost:5173 (mobile viewport ~390px).
+
+## API Endpoints
+
+### Public
+- `GET /api/health/` — Health check (includes MongoDB ping)
+- `GET /api/catalog/products/` — List products
+- `GET /api/catalog/products/:id/` — Product detail
+
+### Authenticated (Bearer JWT from Better Auth)
+- `GET/PUT/POST/DELETE /api/cart/` — Server-side cart sync
+- `GET/POST /api/orders/` — Orders
+- `GET/POST /api/addresses/` — Shipping addresses
+- `GET/POST /api/payment-methods/` — Payment methods
+- `GET/POST /api/reviews/` — Reviews
+- `GET/POST /api/favorites/` — Favorites
+- `GET /api/payments/promocodes/` — Promocodes
+- `POST /api/payments/validate-promocode/` — Validate a promo code (public)
+- `POST /api/payments/create-checkout-session/` — Stripe checkout (creates pending order)
+
+### Public catalog extras
+- `GET /api/catalog/products/?q=search&page=1&pageSize=20` — Search + pagination
+- `GET /api/catalog/products/:id/reviews/` — Product reviews
+
+### Admin
+- `PATCH /api/admin/orders/:id/` — Update order status (header: `X-Admin-Key`)
+
+### Auth (Better Auth service)
+- `POST /api/auth/sign-up/email` — Register
+- `POST /api/auth/sign-in/email` — Login
+- `GET /api/auth/token` — Get JWT for Django API
+
+## Stripe Setup
+
+1. Get test keys from https://dashboard.stripe.com/test/apikeys
+2. Set in `.env`:
+   ```
+   STRIPE_SECRET_KEY=sk_test_...
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   ```
+3. For webhooks (production): `stripe listen --forward-to localhost:8000/api/payments/webhook/`
 
 ## Promocodes
 
-Try `SAVE10` (10% off) or `STYLE20` (20% off) at checkout.
+- `SAVE10` — 10% off
+- `STYLE20` — 20% off
+- `WELCOME15` — 15% off
 
-## Build
+## Frontend-only fallback
 
-```bash
-npm run build
-npm run preview
-```
+If the Django API is unavailable, the app falls back to local mock product data. Auth and user data require the backend services running.

@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, X } from 'lucide-react'
 import { Button } from '../components/Button'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
+import { api } from '../lib/api'
 
 export function CartPage() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const {
     items,
     updateQuantity,
@@ -17,17 +20,25 @@ export function CartPage() {
   } = useCart()
   const [promoInput, setPromoInput] = useState(promocode)
   const [promoError, setPromoError] = useState('')
+  const [promoLoading, setPromoLoading] = useState(false)
 
   const shipping = subtotal > 50 ? 0 : 9.99
   const total = subtotal - discount + shipping
 
-  const applyPromo = () => {
-    const valid = ['SAVE10', 'STYLE20'].includes(promoInput.toUpperCase())
-    if (valid) {
-      setPromocode(promoInput)
-      setPromoError('')
-    } else {
+  const applyPromo = async () => {
+    setPromoLoading(true)
+    setPromoError('')
+    try {
+      const result = await api.validatePromocode(promoInput)
+      if (result.valid) {
+        setPromocode(result.code)
+        setPromoError('')
+      }
+    } catch {
       setPromoError('Invalid promocode')
+      setPromocode('')
+    } finally {
+      setPromoLoading(false)
     }
   }
 
@@ -56,7 +67,7 @@ export function CartPage() {
     <div className="pb-32">
       <div className="max-w-lg mx-auto">
         <div className="px-4 pt-4 pb-2">
-          <h1 className="text-2xl font-extrabold">My Bag</h1>
+          <h1 className="text-2xl font-extrabold text-body">My Bag</h1>
           <p className="text-xs text-muted mt-1">{items.length} items</p>
         </div>
 
@@ -64,7 +75,7 @@ export function CartPage() {
           {items.map((item) => (
             <div
               key={`${item.product.id}-${item.size}-${item.color}`}
-              className="flex gap-3 bg-white rounded-xl p-3 shadow-sm"
+              className="flex gap-3 surface rounded-xl p-3 shadow-sm border border-default"
             >
               <img
                 src={item.product.image}
@@ -150,8 +161,8 @@ export function CartPage() {
               onChange={(e) => setPromoInput(e.target.value)}
               className="flex-1 h-12 px-4 bg-[#f9f9f9] border border-border rounded-lg text-sm outline-none focus:border-primary"
             />
-            <Button variant="outline" size="sm" onClick={applyPromo} className="flex-shrink-0">
-              Apply
+            <Button variant="outline" size="sm" onClick={applyPromo} className="flex-shrink-0" disabled={promoLoading}>
+              {promoLoading ? '...' : 'Apply'}
             </Button>
           </div>
           {promoError && <p className="text-xs text-primary mt-1">{promoError}</p>}
@@ -185,10 +196,16 @@ export function CartPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-border p-4 z-40">
+      <div className="fixed bottom-16 left-0 right-0 surface border-t border-default p-4 z-40">
         <div className="max-w-lg mx-auto">
-          <Button fullWidth size="lg" onClick={() => navigate('/checkout')}>
-            Checkout · ${total.toFixed(2)}
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => navigate(isAuthenticated ? '/checkout' : '/login', {
+              state: isAuthenticated ? undefined : { from: '/checkout' },
+            })}
+          >
+            {isAuthenticated ? `Checkout · $${total.toFixed(2)}` : 'Login to Checkout'}
           </Button>
         </div>
       </div>

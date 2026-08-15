@@ -28,7 +28,7 @@ export function ProductCard({ product, onClick, variant = 'grid' }: ProductCardP
         e.stopPropagation()
         toggleFavorite(product.id)
       }}
-      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 shadow-sm"
+      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 dark:bg-dark-elevated/80 shadow-sm"
       aria-label={isFavorite(product.id) ? 'Remove from favorites' : 'Add to favorites'}
     >
       <svg
@@ -49,7 +49,7 @@ export function ProductCard({ product, onClick, variant = 'grid' }: ProductCardP
       <button
         type="button"
         onClick={onClick}
-        className="flex-shrink-0 w-[148px] text-left bg-white rounded-lg overflow-hidden shadow-sm"
+        className="flex-shrink-0 w-[148px] text-left surface rounded-lg overflow-hidden shadow-sm"
       >
         <div className="relative aspect-[3/4]">
           <img src={product.image} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
@@ -78,7 +78,7 @@ export function ProductCard({ product, onClick, variant = 'grid' }: ProductCardP
     <button
       type="button"
       onClick={onClick}
-      className="text-left bg-white rounded-lg overflow-hidden shadow-sm w-full"
+      className="text-left surface rounded-lg overflow-hidden shadow-sm w-full"
     >
       <div className="relative aspect-[3/4]">
         <img src={product.image} alt={product.title} className="w-full h-full object-cover" loading="lazy" />

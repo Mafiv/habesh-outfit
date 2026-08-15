@@ -20,7 +20,7 @@ export function BottomNav() {
   if (location.pathname.startsWith('/product/') && location.pathname.includes('/filters')) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 surface border-t border-default safe-area-bottom">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-2">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink

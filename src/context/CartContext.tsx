@@ -1,17 +1,20 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import type { CartItem, Product } from '../types'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
+import type { CartItem, Product, CartItemPayload } from '../types'
+import { api } from '../lib/api'
+import { useAuth } from './AuthContext'
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (product: Product, size: string, color: string, quantity?: number) => void
+  addItem: (product: Product, size: string, color: string, quantity?: number) => boolean
   removeItem: (productId: string, size: string, color: string) => void
-  updateQuantity: (productId: string, size: string, color: string, quantity: number) => void
+  updateQuantity: (productId: string, size: string, color: string, quantity: number) => boolean
   clearCart: () => void
   itemCount: number
   subtotal: number
   promocode: string
   setPromocode: (code: string) => void
   discount: number
+  syncing: boolean
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -19,19 +22,162 @@ const CartContext = createContext<CartContextType | null>(null)
 const PROMO_CODES: Record<string, number> = {
   SAVE10: 0.1,
   STYLE20: 0.2,
+  WELCOME15: 0.15,
+}
+
+const CART_KEY = 'stylish_cart'
+const PROMO_KEY = 'stylish_promocode'
+
+function loadCart(): CartItem[] {
+  try {
+    const saved = localStorage.getItem(CART_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+function toPayload(items: CartItem[]): CartItemPayload[] {
+  return items.map((i) => ({
+    productId: i.product.id,
+    title: i.product.title,
+    brand: i.product.brand,
+    image: i.product.image,
+    size: i.size,
+    color: i.color,
+    quantity: i.quantity,
+    price: i.product.price,
+  }))
+}
+
+function cartQtyForProduct(items: CartItem[], productId: string): number {
+  return items
+    .filter((i) => i.product.id === productId)
+    .reduce((sum, i) => sum + i.quantity, 0)
+}
+
+function payloadToCartItem(item: CartItemPayload): CartItem {
+  return {
+    product: {
+      id: item.productId,
+      title: item.title,
+      brand: item.brand ?? '',
+      price: item.price,
+      rating: 0,
+      reviewCount: 0,
+      image: item.image ?? '',
+      images: item.image ? [item.image] : [],
+      category: '',
+      subcategory: '',
+      gender: 'women',
+      colors: [],
+      sizes: [],
+      description: '',
+    },
+    size: item.size,
+    color: item.color ?? '',
+    quantity: item.quantity,
+  }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [promocode, setPromocode] = useState('')
+  const { isAuthenticated } = useAuth()
+  const [items, setItems] = useState<CartItem[]>(loadCart)
+  const [promocode, setPromocodeState] = useState(
+    () => localStorage.getItem(PROMO_KEY) ?? ''
+  )
+  const [syncing, setSyncing] = useState(false)
+  const skipNextSync = useRef(false)
+  const hydratedFromServer = useRef(false)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hydratedFromServer.current = false
+      return
+    }
+
+    let cancelled = false
+    async function loadServerCart() {
+      setSyncing(true)
+      try {
+        const localItems = loadCart()
+        const localPromo = localStorage.getItem(PROMO_KEY) ?? ''
+
+        const serverCart = localItems.length
+          ? await api.syncCart({ items: toPayload(localItems), promocode: localPromo })
+          : await api.getCart()
+
+        if (cancelled) return
+
+        skipNextSync.current = true
+        setItems(serverCart.items.map(payloadToCartItem))
+        setPromocodeState(serverCart.promocode || localPromo)
+        hydratedFromServer.current = true
+        localStorage.removeItem(CART_KEY)
+      } catch {
+        hydratedFromServer.current = true
+      } finally {
+        if (!cancelled) setSyncing(false)
+      }
+    }
+
+    loadServerCart()
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      localStorage.setItem(CART_KEY, JSON.stringify(items))
+    }
+  }, [items, isAuthenticated])
+
+  useEffect(() => {
+    localStorage.setItem(PROMO_KEY, promocode)
+  }, [promocode])
+
+  useEffect(() => {
+    if (!isAuthenticated || !hydratedFromServer.current) return
+    if (skipNextSync.current) {
+      skipNextSync.current = false
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setSyncing(true)
+      try {
+        await api.updateCart({ items: toPayload(items), promocode })
+      } catch {
+        /* keep local state */
+      } finally {
+        setSyncing(false)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [items, promocode, isAuthenticated])
+
+  const setPromocode = useCallback((code: string) => {
+    setPromocodeState(code)
+    localStorage.setItem(PROMO_KEY, code)
+  }, [])
 
   const addItem = useCallback(
     (product: Product, size: string, color: string, quantity = 1) => {
+      const stock = product.stock ?? 99
+      if (product.inStock === false || stock <= 0) return false
+
+      let added = false
       setItems((prev) => {
+        const currentQty = cartQtyForProduct(prev, product.id)
+        if (currentQty + quantity > stock) return prev
+
         const existing = prev.find(
           (i) =>
             i.product.id === product.id && i.size === size && i.color === color
         )
+        added = true
         if (existing) {
           return prev.map((i) =>
             i.product.id === product.id && i.size === size && i.color === color
@@ -41,6 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { product, size, color, quantity }]
       })
+      return added
     },
     []
   )
@@ -65,20 +212,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (productId: string, size: string, color: string, quantity: number) => {
       if (quantity <= 0) {
         removeItem(productId, size, color)
-        return
+        return true
       }
-      setItems((prev) =>
-        prev.map((i) =>
+
+      let updated = false
+      setItems((prev) => {
+        const item = prev.find(
+          (i) =>
+            i.product.id === productId && i.size === size && i.color === color
+        )
+        if (!item) return prev
+
+        const stock = item.product.stock ?? 99
+        const otherQty = cartQtyForProduct(prev, productId) - item.quantity
+        if (otherQty + quantity > stock) return prev
+
+        updated = true
+        return prev.map((i) =>
           i.product.id === productId && i.size === size && i.color === color
             ? { ...i, quantity }
             : i
         )
-      )
+      })
+      return updated
     },
     [removeItem]
   )
 
-  const clearCart = useCallback(() => setItems([]), [])
+  const clearCart = useCallback(() => {
+    setItems([])
+    localStorage.removeItem(CART_KEY)
+    if (isAuthenticated) {
+      api.clearCart().catch(() => {})
+    }
+  }, [isAuthenticated])
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const subtotal = items.reduce(
@@ -101,6 +268,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         promocode,
         setPromocode,
         discount,
+        syncing,
       }}
     >
       {children}

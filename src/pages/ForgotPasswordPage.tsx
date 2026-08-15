@@ -2,18 +2,27 @@ import { useState, type FormEvent } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { Button } from '../components/Button'
 import { InputField } from '../components/FormFields'
+import { useAuth } from '../context/AuthContext'
 
 export function ForgotPasswordPage() {
+  const { requestPasswordReset } = useAuth()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    setError('')
+    setSubmitting(true)
+    const ok = await requestPasswordReset(email)
+    setSubmitting(false)
+    if (ok) setSent(true)
+    else setError('Could not send reset email. Check the address or try again.')
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen surface-page">
       <PageHeader title="Forgot Password" />
 
       <div className="max-w-lg mx-auto px-4 py-8">
@@ -25,16 +34,15 @@ export function ForgotPasswordPage() {
                 <polyline points="22,6 12,13 2,6" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold">Check your email</h2>
+            <h2 className="text-lg font-bold text-body">Check your email</h2>
             <p className="text-sm text-muted mt-2">
-              We sent a password reset link to {email}
+              If an account exists for {email}, you will receive a password reset link.
             </p>
           </div>
         ) : (
           <>
             <p className="text-sm text-muted mt-4 leading-relaxed">
-              Please enter your email address. You will receive a link to create a
-              new password via email.
+              Enter your email address and we will send you a link to reset your password.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -44,10 +52,12 @@ export function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
-              <Button type="submit" fullWidth size="lg">
-                Send
+              <Button type="submit" fullWidth size="lg" disabled={submitting}>
+                {submitting ? 'Sending...' : 'Send'}
               </Button>
+              {error && <p className="text-sm text-primary text-center">{error}</p>}
             </form>
           </>
         )}

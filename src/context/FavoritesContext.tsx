@@ -1,47 +1,83 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react'
 import type { Product } from '../types'
+import { api } from '../lib/api'
+import { useAuth } from './AuthContext'
+import { products as allProducts } from '../data/products'
 
 interface FavoritesContextType {
   favorites: string[]
+  favoriteProducts: Product[]
   toggleFavorite: (productId: string) => void
   isFavorite: (productId: string) => boolean
-  favoriteProducts: Product[]
+  loading: boolean
 }
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null)
 
-export function FavoritesProvider({
-  children,
-  products,
-}: {
-  children: ReactNode
-  products: Product[]
-}) {
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('stylish_favorites')
-    return saved ? JSON.parse(saved) : []
-  })
+export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth()
+  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const toggleFavorite = useCallback((productId: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
+  const favorites = favoriteProducts.map((p) => p.id)
+
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) {
+      const saved = localStorage.getItem('stylish_favorites')
+      const ids: string[] = saved ? JSON.parse(saved) : []
+      setFavoriteProducts(allProducts.filter((p) => ids.includes(p.id)))
+      return
+    }
+
+    setLoading(true)
+    try {
+      const data = await api.getFavorites()
+      setFavoriteProducts(data)
+    } catch {
+      /* keep current */
+    } finally {
+      setLoading(false)
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const toggleFavorite = useCallback(
+    async (productId: string) => {
+      if (isAuthenticated) {
+        await api.toggleFavorite(productId)
+        await refresh()
+        return
+      }
+
+      const saved = localStorage.getItem('stylish_favorites')
+      const ids: string[] = saved ? JSON.parse(saved) : []
+      const next = ids.includes(productId)
+        ? ids.filter((id) => id !== productId)
+        : [...ids, productId]
       localStorage.setItem('stylish_favorites', JSON.stringify(next))
-      return next
-    })
-  }, [])
+      setFavoriteProducts(allProducts.filter((p) => next.includes(p.id)))
+    },
+    [isAuthenticated, refresh]
+  )
 
   const isFavorite = useCallback(
     (productId: string) => favorites.includes(productId),
     [favorites]
   )
 
-  const favoriteProducts = products.filter((p) => favorites.includes(p.id))
-
   return (
     <FavoritesContext.Provider
-      value={{ favorites, toggleFavorite, isFavorite, favoriteProducts }}
+      value={{ favorites, favoriteProducts, toggleFavorite, isFavorite, loading }}
     >
       {children}
     </FavoritesContext.Provider>

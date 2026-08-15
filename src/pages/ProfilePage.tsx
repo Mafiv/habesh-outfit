@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 
 const menuItems = [
   { icon: Package, label: 'My Orders', path: '/orders' },
@@ -22,7 +23,11 @@ const menuItems = [
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen label="Loading profile..." />
+  }
 
   if (!isAuthenticated) {
     return (
@@ -74,18 +79,18 @@ export function ProfilePage() {
       </div>
 
       <div className="px-4 mt-2">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="surface rounded-xl shadow-sm overflow-hidden border border-default">
           {menuItems.map(({ icon: Icon, label, path }, i) => (
             <button
               key={label}
               type="button"
               onClick={() => navigate(path)}
               className={`w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors ${
-                i < menuItems.length - 1 ? 'border-b border-border' : ''
+                i < menuItems.length - 1 ? 'border-b border-default' : ''
               }`}
             >
               <Icon size={20} className="text-muted" />
-              <span className="flex-1 text-left text-sm font-medium">{label}</span>
+              <span className="flex-1 text-left text-sm font-medium text-body">{label}</span>
               <ChevronRight size={18} className="text-muted" />
             </button>
           ))}
@@ -93,11 +98,11 @@ export function ProfilePage() {
 
         <button
           type="button"
-          onClick={() => {
-            logout()
+          onClick={async () => {
+            await logout()
             navigate('/')
           }}
-          className="w-full flex items-center gap-4 px-4 py-4 mt-4 bg-white rounded-xl shadow-sm hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center gap-4 px-4 py-4 mt-4 surface rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors border border-default"
         >
           <LogOut size={20} className="text-primary" />
           <span className="text-sm font-medium text-primary">Logout</span>
