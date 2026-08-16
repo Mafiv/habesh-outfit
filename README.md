@@ -136,6 +136,46 @@ See [DEPLOY.md](./DEPLOY.md) for Vercel + Railway/Render setup, Stripe webhooks,
 npm run test:e2e
 ```
 
+## CI/CD
+
+[![CI](https://github.com/Mafiv/habesh-outfit/actions/workflows/ci.yml/badge.svg)](https://github.com/Mafiv/habesh-outfit/actions/workflows/ci.yml)
+[![CD](https://github.com/Mafiv/habesh-outfit/actions/workflows/cd.yml/badge.svg)](https://github.com/Mafiv/habesh-outfit/actions/workflows/cd.yml)
+
+### CI (every PR & push)
+
+| Job | What it does |
+|-----|--------------|
+| **frontend** | `npm ci` → lint → build → upload artifact |
+| **auth-service** | `npm ci` → syntax check |
+| **backend** | Django check + unit tests |
+| **docker** | Build API & auth Docker images |
+| **e2e** | Playwright tests (Chromium) |
+
+### CD (push to `main`)
+
+| Job | What it does |
+|-----|--------------|
+| **publish-docker** | Push `api` + `auth` images to `ghcr.io` |
+| **deploy-frontend** | Deploy to Vercel (when enabled) |
+| **smoke-test** | Health-check deployed URLs |
+
+### Enable Vercel deploy
+
+1. Add GitHub **repository secrets**:
+   - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+   - `VITE_API_URL`, `VITE_AUTH_URL`, `VITE_STRIPE_PUBLISHABLE_KEY`
+2. Add GitHub **repository variable**: `ENABLE_VERCEL_DEPLOY` = `true`
+3. Optional smoke-test secrets: `API_HEALTH_URL`, `FRONTEND_URL`
+
+### Pull Docker images
+
+```bash
+docker pull ghcr.io/mafiv/habesh-outfit/api:latest
+docker pull ghcr.io/mafiv/habesh-outfit/auth:latest
+```
+
+See [DEPLOY.md](./DEPLOY.md) for full production setup.
+
 ### Auth (Better Auth service)
 - `POST /api/auth/sign-up/email` — Register
 - `POST /api/auth/sign-in/email` — Login
